@@ -8,7 +8,14 @@ import type {
   StartVerificationResponse,
   VerificationLevel,
 } from '../../shared/contracts.js';
-import { getAppConfig, isConfigured, isEnabled, type AppConfig } from '../core/config.js';
+import {
+  getAppConfig,
+  getWorldConfig,
+  isHumanBadgeConfigured,
+  isEnabled,
+  type AppConfig,
+  type WorldConfig,
+} from '../core/config.js';
 import { deriveOpaqueSignal } from '../core/privacy.js';
 import {
   assignHumanBadgeFlair,
@@ -80,7 +87,7 @@ async function createBridgeLaunch(input: {
 
 function createDirectVerificationSession(input: {
   request: VerificationRequest;
-  config: AppConfig;
+  config: WorldConfig;
   action: string;
   verificationLevel: VerificationLevel;
 }): DirectVerificationSession {
@@ -110,7 +117,7 @@ function createDirectVerificationSession(input: {
 
 api.get('/init', async (c) => {
   const enabled = await isEnabled();
-  const setupComplete = await isConfigured();
+  const setupComplete = await isHumanBadgeConfigured();
   const userId = context.userId;
   if (!userId) {
     return c.json<PortalState>({
@@ -222,7 +229,7 @@ api.post('/human-badge/start', async (c) => {
       userId: context.userId,
       username: user.username,
     });
-    const config = await getAppConfig();
+    const config = await getWorldConfig();
     const session = createDirectVerificationSession({
       request,
       config,
@@ -251,7 +258,7 @@ api.post('/human-badge/complete', async (c) => {
     if (!request || request.status !== 'pending') throw new Error('Verification request is not pending');
     if (request.redditUserId !== context.userId) throw new Error('Reddit user does not match');
 
-    const config = await getAppConfig();
+    const config = await getWorldConfig();
     const action = config.humanBadgeAction;
     const signal = deriveOpaqueSignal({
       secret: config.signalSecret,
