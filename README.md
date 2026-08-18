@@ -146,7 +146,7 @@ npx devvit settings set worldBridgeApiToken
 | Setting | Default | Effect |
 | --- | --- | --- |
 | Enable World Human Check | On | Master switch for requests and verification. |
-| Verified user flair | `🌐 Human Checked` | Flair applied after successful verification. |
+| Verified user flair | `🌐 Unique Human` | Flair applied after successful verification. |
 | Verification request message | Included | Community-specific private-message text. |
 | Require Human Check for posts | Off | Holds posts from unverified users. |
 | Require Human Check for comments | Off | Holds comments from unverified users. |
