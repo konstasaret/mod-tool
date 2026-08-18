@@ -37,14 +37,12 @@
       "worldAppId": {
         "type": "string",
         "label": "World app ID",
-        "helpText": "Public app_id from the World Developer Portal.",
-        "defaultValue": "app_8ce3b1f93924b643d6ff8225fffdbbf5"
+        "helpText": "Public app_id from the World Developer Portal. Configure privately with Devvit settings."
       },
       "worldRpId": {
         "type": "string",
         "label": "World relying-party ID",
-        "helpText": "Public rp_id from the World Developer Portal.",
-        "defaultValue": "rp_a3400196197df1cd"
+        "helpText": "Public rp_id from the World Developer Portal. Configure privately with Devvit settings."
       },
       "worldAction": {
         "type": "string",
@@ -135,9 +133,6 @@
   },
   "triggers": {
     "onAppInstall": "/internal/triggers/on-app-install"
-  },
-  "dev": {
-    "subreddit": "Onlyhumanshere"
   },
   "scripts": {
     "dev": "vite build --watch",

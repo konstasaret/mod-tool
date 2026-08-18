@@ -8,8 +8,8 @@
 
 | Status     | Item                                                                           |
 | ---------- | ------------------------------------------------------------------------------ |
-| ✅ Done    | Devvit app built and registered as `world-app`                                 |
-| ✅ Done    | Version `0.0.1` installed in `r/Onlyhumanshere`                                |
+| ✅ Done    | Devvit app built and registered                                                |
+| ✅ Done    | First playtest version installed in the private test community                 |
 | ✅ Done    | Moderator action, user portal, Redis state, World verification, and flair code |
 | ✅ Done    | Privacy and replay-protection tests passing                                    |
 | ⏳ Next    | Deploy the verification bridge and add fresh secrets                           |
@@ -119,17 +119,16 @@ Also included: Reddit private-message delivery, verified flair assignment, signa
 
 ## What do I need to provide?
 
-### Already configured
+### Kept out of this repository
 
-| Input           | Current value                          |
-| --------------- | -------------------------------------- |
-| Devvit app slug | `world-app`                            |
-| Test community  | `r/Onlyhumanshere`                     |
-| World app ID    | `app_8ce3b1f93924b643d6ff8225fffdbbf5` |
-| World RP ID     | `rp_a3400196197df1cd`                  |
-| Default action  | `reddit-human-selfie-v1`               |
+| Input                | Where to configure it                                |
+| -------------------- | ---------------------------------------------------- |
+| World app ID         | Devvit global developer setting: `worldAppId`        |
+| World RP ID          | Devvit global developer setting: `worldRpId`         |
+| World RP signing key | Devvit encrypted global setting: `worldRpSigningKey` |
+| Test community       | Supply it locally to the Devvit playtest command     |
 
-These are public configuration values. No signing key is committed.
+Concrete app IDs, RP IDs, community names, and secrets are intentionally excluded from this README.
 
 ### Still required
 
@@ -153,13 +152,13 @@ You need:
 
 - A Reddit account connected to [Reddit for Developers](https://developers.reddit.com/).
 - Moderator access to the small test subreddit.
-- Access to the `world-app` Devvit registration.
+- Access to the registered Devvit app.
 - Access to the World app/RP in the [World Developer Portal](https://developer.world.org/).
 - Selfie Check enabled for that RP.
 
 You do **not** need a traditional Reddit OAuth client ID or client secret.
 
-**Done when:** you can access both developer portals and moderate `r/Onlyhumanshere`.
+**Done when:** you can access both developer portals and moderate the private test community.
 
 ### Checkpoint 2 — Create fresh secrets
 
@@ -194,6 +193,8 @@ Add the bridge's exact hostname—without protocol, wildcard, or path—to `perm
 Run these commands one at a time. Each command opens an interactive prompt so the secret does not enter your shell history.
 
 ```bash
+npx devvit settings set worldAppId
+npx devvit settings set worldRpId
 npx devvit settings set worldRpSigningKey
 npx devvit settings set signalHmacSecret
 npx devvit settings set worldBridgeBaseUrl
@@ -202,7 +203,7 @@ npx devvit settings set worldBridgeApiToken
 
 Keep the default `worldAction` and `worldEnvironment` unless they do not match the World Portal configuration.
 
-**Done when:** all four settings exist and no secret appears in a tracked file.
+**Done when:** all six settings exist and no identifier or secret appears in a tracked file.
 
 ### Checkpoint 5 — Test it
 
@@ -211,10 +212,8 @@ npm install
 npm run check
 npm run build
 npm run login
-npm run dev
+npx devvit playtest <private-test-subreddit>
 ```
-
-The default playtest target is `r/Onlyhumanshere`.
 
 **Done when:** a moderator can request a check and the user sees the verification portal. The full World round trip also requires the Reddit approvals below.
 
