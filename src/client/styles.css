@@ -51,6 +51,7 @@ h2 { margin: 0; font-size: 24px; line-height: 1.15; }
 .primary:hover { background: #0e56cb; }
 .primary.orb { background: #111318; }
 .primary.orb:hover { background: #292d35; }
+.bridge-link { display: block; text-align: center; text-decoration: none; }
 .secondary { background: #eef1f5; color: #252a32; }
 button:disabled { cursor: not-allowed; opacity: 0.52; }
 

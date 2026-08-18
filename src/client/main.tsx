@@ -17,6 +17,12 @@ type BridgeProofMessage = {
   idkitResponse?: IdKitResponse;
 };
 
+type PendingBridge = {
+  url: string;
+  nonce: string;
+  requestId: string;
+};
+
 function errorMessage(caught: unknown, fallback: string): string {
   if (caught instanceof Error && caught.message) return caught.message;
   if (typeof caught === 'string' && caught) return caught;
@@ -30,25 +36,22 @@ function errorMessage(caught: unknown, fallback: string): string {
 }
 
 function waitForBridgeProof(input: {
-  bridgeWindow: Window;
   nonce: string;
   requestId: string;
 }): Promise<IdKitResponse> {
   return new Promise((resolve, reject) => {
     let timeoutId = 0;
-    let closedIntervalId = 0;
 
     const cleanup = () => {
       window.removeEventListener('message', handleMessage);
       window.clearTimeout(timeoutId);
-      window.clearInterval(closedIntervalId);
     };
     const fail = (message: string) => {
       cleanup();
       reject(new Error(message));
     };
     const handleMessage = (event: MessageEvent<BridgeProofMessage>) => {
-      if (event.origin !== WORLD_BRIDGE_ORIGIN || event.source !== input.bridgeWindow) return;
+      if (event.origin !== WORLD_BRIDGE_ORIGIN) return;
       const message = event.data;
       if (
         message?.type !== 'orb-human-badge-proof' ||
@@ -67,9 +70,6 @@ function waitForBridgeProof(input: {
       () => fail('World verification timed out. Try again.'),
       10 * 60 * 1000
     );
-    closedIntervalId = window.setInterval(() => {
-      if (input.bridgeWindow.closed) fail('World verification window was closed.');
-    }, 500);
   });
 }
 
@@ -77,6 +77,7 @@ function App() {
   const [state, setState] = useState<PortalState>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>();
+  const [pendingBridge, setPendingBridge] = useState<PendingBridge>();
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -97,27 +98,32 @@ function App() {
   }, [refresh]);
 
   const start = async () => {
-    const worldWindow = window.open('', '_blank');
     setLoading(true);
     setError(undefined);
+    setPendingBridge(undefined);
     try {
       const response = await fetch('/api/human-badge/start', { method: 'POST' });
       const result = (await response.json()) as StartVerificationResponse;
       if (!result.ok) throw new Error(result.error);
       if (!('session' in result)) throw new Error('World verification session was not returned.');
       const { session } = result;
-      if (!worldWindow) throw new Error('Allow pop-ups, then try again.');
       const nonce = crypto.randomUUID();
       const proofPromise = waitForBridgeProof({
-        bridgeWindow: worldWindow,
         nonce,
         requestId: session.requestId,
       });
       const payload = encodeURIComponent(
         JSON.stringify({ nonce, openerOrigin: window.location.origin, session })
       );
-      worldWindow.location.href = `${WORLD_BRIDGE_URL}#payload=${payload}`;
+      setPendingBridge({
+        url: `${WORLD_BRIDGE_URL}#payload=${payload}`,
+        nonce,
+        requestId: session.requestId,
+      });
+      setLoading(false);
       const idkitResponse = await proofPromise;
+      setPendingBridge(undefined);
+      setLoading(true);
       const completionResponse = await fetch('/api/human-badge/complete', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
@@ -127,11 +133,10 @@ function App() {
         }),
       });
       if (!completionResponse.ok) throw new Error('Reddit did not accept the World proof.');
-      worldWindow.close();
       await refresh();
     } catch (caught) {
       console.error('Orb verification failed', caught);
-      worldWindow?.close();
+      setPendingBridge(undefined);
       setError(errorMessage(caught, 'Orb verification could not start.'));
     } finally {
       setLoading(false);
@@ -196,7 +201,7 @@ function App() {
         )}
         {error && <p className="error">{error}</p>}
 
-        {state?.humanBadgeStatus !== 'verified' && (
+        {state?.humanBadgeStatus !== 'verified' && !pendingBridge && (
           <button className="primary orb" disabled={!canVerify} onClick={() => void start()}>
             {loading
               ? 'Starting…'
@@ -204,6 +209,22 @@ function App() {
                 ? 'Continue Orb verification'
                 : 'Verify with World'}
           </button>
+        )}
+        {pendingBridge && (
+          <>
+            <p className="notice">
+              Signed request ready. Open the QR page, then keep this Reddit page open.
+            </p>
+            <a
+              className="primary orb bridge-link"
+              href={pendingBridge.url}
+              target="_blank"
+              rel="opener"
+              referrerPolicy="no-referrer"
+            >
+              Open World QR page
+            </a>
+          </>
         )}
         <button className="secondary" disabled={loading} onClick={() => void refresh()}>
           Refresh status
