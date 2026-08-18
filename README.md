@@ -1,6 +1,6 @@
 # World Human Check — Developer Guide
 
-World Human Check is a Reddit Devvit moderation app that lets a subreddit request a privacy-preserving World Selfie Check, assign community flair after success, and optionally require verification before posts or comments remain visible.
+World Human Check is a Reddit Devvit moderation app that lets a subreddit request a privacy-preserving World Selfie Check, assign community flair after success, and optionally require verification before posts or comments remain visible. Separately, an Orb-verified Reddit user can self-serve a `🌐 human` community badge.
 
 This README is the developer handoff: what exists, how it works, how to run it, and what is still unfinished. It intentionally contains no real app IDs, relying-party IDs, signing keys, API tokens, community names, or deployment URLs.
 
@@ -15,6 +15,7 @@ V1 is implemented and installed as a private playtest build.
 - World Selfie Check runs through a separately hosted bridge.
 - Successful checks persist per-install verification state and apply Reddit flair.
 - Optional post and comment gates hold unverified submissions and restore them after success.
+- An optional Orb Proof of Human flow grants a separate human badge without changing the Selfie Check workflow.
 
 The automated gates default to **off**. Joining the subreddit is not restricted.
 
@@ -40,6 +41,16 @@ Moderators can independently enable gates for posts and comments.
 
 Moderators and Devvit app accounts are exempt. The queue holds at most five items per user for 24 hours. When the queue is full or state cannot be saved, the app fails open and re-approves the new submission.
 
+### Orb-verified human badge
+
+1. A signed-in user opens the same community portal and selects **Get human badge**.
+2. The bridge requests the user's existing Orb credential; no moderator request is required.
+3. Devvit accepts only a World response whose credential identifier is `orb`.
+4. Successful verification stores separate badge state and applies the community's `🌐 human` flair.
+5. Orb verification also satisfies optional post/comment gates. Removing the badge restores the Selfie Check flair when a separate Selfie Check record exists.
+
+Reddit exposes one user-flair slot per community, so the Orb badge takes visual precedence while both verification records remain independent.
+
 ## Architecture
 
 ```text
@@ -57,7 +68,7 @@ Reddit verification portal
   Devvit creates signed RP context
             |
             v
-   HTTPS verification bridge ------> World App / Selfie Check
+   HTTPS verification bridge ------> World App / Selfie Check or Orb proof
             |                              |
             |<--------- proof -------------|
             v
@@ -77,7 +88,7 @@ Reddit verification portal
 | Devvit client | Displays the community portal, current status, start button, and unlink control. |
 | Devvit server | Owns Reddit identity, settings, RP signing, proof validation, Redis state, Reddit actions, and World API verification. |
 | Verification bridge | Hosts IDKit, creates short-lived browser sessions, launches the World handoff, and returns the proof to Devvit. |
-| World | Performs Selfie Check and produces the proof. |
+| World | Performs Selfie Check or proves an existing Orb credential. |
 | Reddit | Hosts the app and per-install Redis, sends private messages, moderates submissions, and stores flair. |
 
 ## Privacy and trust boundaries
@@ -122,6 +133,7 @@ The repository contains setting names only. Store actual values in Devvit settin
 | `worldAppId` | No | World application identifier. |
 | `worldRpId` | No | World relying-party identifier. |
 | `worldAction` | No | Selfie Check action; defaults to `reddit-human-selfie-v1`. |
+| `worldHumanBadgeAction` | No | Orb badge action. The POC defaults to the existing Selfie action, while the callback still requires an `orb` credential response. |
 | `worldEnvironment` | No | `production` or `staging`. |
 | `worldRpSigningKey` | Yes | Server-only World RP signing key. |
 | `signalHmacSecret` | Yes | Random value of at least 32 characters for opaque signals. |
@@ -134,6 +146,7 @@ Set each value interactively so it does not appear in shell history:
 npx devvit settings set worldAppId
 npx devvit settings set worldRpId
 npx devvit settings set worldAction
+npx devvit settings set worldHumanBadgeAction
 npx devvit settings set worldEnvironment
 npx devvit settings set worldRpSigningKey
 npx devvit settings set signalHmacSecret
@@ -146,7 +159,8 @@ npx devvit settings set worldBridgeApiToken
 | Setting | Default | Effect |
 | --- | --- | --- |
 | Enable World Human Check | On | Master switch for requests and verification. |
-| Verified user flair | `🌐 Unique Human` | Flair applied after successful verification. |
+| Verified user flair | `🌐 Human Checked` | Flair applied after successful verification. |
+| Orb-verified human badge flair | `🌐 human` | Flair applied by the separate Orb Proof of Human flow. |
 | Verification request message | Included | Community-specific private-message text. |
 | Require Human Check for posts | Off | Holds posts from unverified users. |
 | Require Human Check for comments | Off | Holds comments from unverified users. |
@@ -246,10 +260,12 @@ Redis is isolated per subreddit installation.
 | Portal post | Reuses one custom verification post | No expiry. |
 | Pending request/index | Connects a user to one request | 24-hour expiry while pending. |
 | Verified user | Enables flair and gate bypass | Retained until unlink. |
+| Human badge request/index | Connects a user to a separate Orb request | 24-hour expiry while pending. |
+| Human badge user | Enables the Orb badge and gate bypass | Retained until human-badge unlink. |
 | Held content | Tracks removed posts/comments for restoration | Up to five items; 24-hour expiry. |
 | Nullifier claim | Prevents credential reuse inside the installation | Retained until verified user unlinks. |
 
-Unlink removes verified state, matching request, held state, nullifier claim, and matching app-managed flair. A failed-request cleanup policy and a user-facing deletion path for non-verified users remain hardening work.
+Selfie unlink preserves its existing behavior: it removes Selfie verified state, matching request, held state, nullifier claim, and matching app-managed flair. Human-badge unlink removes only Orb badge state and its nullifier claim; it restores the Selfie flair when a separate Selfie record still exists. A failed-request cleanup policy and a user-facing deletion path for non-verified users remain hardening work.
 
 ## Failure behavior
 

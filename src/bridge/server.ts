@@ -49,6 +49,7 @@ function publicSession(session: StoredSession): BridgePublicSession {
     signal: session.signal,
     rpContext: session.rpContext,
     environment: session.environment,
+    verificationLevel: session.verificationLevel,
     expiresAt: session.expiresAt,
   };
 }
@@ -65,6 +66,8 @@ app.post('/api/sessions', async (c) => {
     !['production', 'staging'].includes(input.environment) ||
     input.rpContext?.rp_id !== input.rpId ||
     !Number.isFinite(input.rpContext?.expires_at) ||
+    (input.verificationLevel !== undefined &&
+      !['selfie', 'orb'].includes(input.verificationLevel)) ||
     !validDevvitCallback(input.callbackUrl)
   ) {
     return c.json({ error: 'Invalid session request' }, 400);

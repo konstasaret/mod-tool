@@ -15,7 +15,7 @@ import {
   type TargetAuthor,
 } from '../core/reddit.js';
 import { ensureHumanCheckRequest } from '../core/requests.js';
-import { getVerifiedUser, holdContent } from '../core/state.js';
+import { getHumanBadgeUser, getVerifiedUser, holdContent } from '../core/state.js';
 
 export const triggers = new Hono();
 
@@ -41,15 +41,16 @@ async function gateSubmission(input: {
   ]);
   if (!appEnabled || !gateEnabled) return;
 
-  const [verified, exempt] = await Promise.all([
+  const [verified, humanBadge, exempt] = await Promise.all([
     getVerifiedUser(author.id),
+    getHumanBadgeUser(author.id),
     isExempt(author),
   ]);
   if (
     !shouldGateContent({
       appEnabled,
       gateEnabled,
-      verified: Boolean(verified),
+      verified: Boolean(verified || humanBadge),
       exempt,
     })
   ) {

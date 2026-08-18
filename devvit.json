@@ -24,7 +24,7 @@
   "permissions": {
     "http": {
       "enable": true,
-      "domains": ["developer.world.org"]
+      "domains": ["developer.world.org", "mod-tool.onrender.com"]
     },
     "redis": true,
     "reddit": {
@@ -47,6 +47,12 @@
       "worldAction": {
         "type": "string",
         "label": "Selfie Check action",
+        "defaultValue": "reddit-human-selfie-v1"
+      },
+      "worldHumanBadgeAction": {
+        "type": "string",
+        "label": "Proof of Human badge action",
+        "helpText": "World action used for the optional Orb-backed human badge. Defaults to the Selfie Check action for the POC.",
         "defaultValue": "reddit-human-selfie-v1"
       },
       "worldEnvironment": {
@@ -98,6 +104,11 @@
         "type": "string",
         "label": "Verified user flair",
         "defaultValue": "🌐 Human Checked"
+      },
+      "humanBadgeFlairText": {
+        "type": "string",
+        "label": "Orb-verified human badge flair",
+        "defaultValue": "🌐 human"
       },
       "requestMessage": {
         "type": "paragraph",

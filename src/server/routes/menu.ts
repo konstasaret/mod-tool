@@ -10,7 +10,11 @@ import {
 } from '../core/reddit.js';
 import { humanCheckStatusMessage } from '../core/gating.js';
 import { ensureHumanCheckRequest } from '../core/requests.js';
-import { getPendingRequestForUser, getVerifiedUser } from '../core/state.js';
+import {
+  getHumanBadgeUser,
+  getPendingRequestForUser,
+  getVerifiedUser,
+} from '../core/state.js';
 
 export const menu = new Hono();
 
@@ -34,8 +38,11 @@ menu.post('/request-human-check', async (c) => {
       return c.json<UiResponse>({ showToast: 'Choose a post or comment author.' }, 400);
     }
     const author = await getTargetAuthor(input.targetId, input.location);
-    const existing = await getVerifiedUser(author.userId);
-    if (existing) {
+    const [existing, humanBadge] = await Promise.all([
+      getVerifiedUser(author.userId),
+      getHumanBadgeUser(author.userId),
+    ]);
+    if (existing || humanBadge) {
       return c.json<UiResponse>({ showToast: 'This author is already Human Checked.' });
     }
 
@@ -61,16 +68,19 @@ menu.post('/view-status', async (c) => {
       return c.json<UiResponse>({ showToast: 'Choose a post or comment author.' }, 400);
     }
     const author = await getTargetAuthor(input.targetId, input.location);
-    const [verified, pending] = await Promise.all([
+    const [verified, pending, humanBadge] = await Promise.all([
       getVerifiedUser(author.userId),
       getPendingRequestForUser(author.userId),
+      getHumanBadgeUser(author.userId),
     ]);
     return c.json<UiResponse>({
-      showToast: humanCheckStatusMessage({
-        verifiedAt: verified?.verifiedAt,
-        requestStatus: pending?.status,
-        requestedAt: pending?.requestedAt,
-      }),
+      showToast: humanBadge
+        ? `Orb-verified human badge granted on ${new Date(humanBadge.verifiedAt).toLocaleDateString()}.`
+        : humanCheckStatusMessage({
+            verifiedAt: verified?.verifiedAt,
+            requestStatus: pending?.status,
+            requestedAt: pending?.requestedAt,
+          }),
     });
   } catch (error) {
     console.error('Human Check status lookup failed', error);

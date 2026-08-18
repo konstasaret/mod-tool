@@ -29,6 +29,7 @@ button { font: inherit; }
 .mark { font-size: 40px; }
 .eyebrow { margin: 14px 0 6px; color: #316ee8; font-size: 12px; font-weight: 800; letter-spacing: 0.12em; }
 h1 { margin: 0; font-size: clamp(30px, 6vw, 44px); line-height: 1.05; }
+h2 { margin: 0; font-size: 24px; line-height: 1.15; }
 .lede { margin: 14px 0 24px; color: #5e6572; font-size: 17px; line-height: 1.55; }
 
 .status { display: grid; gap: 5px; padding: 16px; border-radius: 14px; background: #f1f4f8; }
@@ -48,6 +49,8 @@ h1 { margin: 0; font-size: clamp(30px, 6vw, 44px); line-height: 1.05; }
 .link-button { width: 100%; margin-top: 14px; border: 0; background: transparent; color: #5d6572; text-decoration: underline; cursor: pointer; }
 .primary { background: #1967e8; color: white; }
 .primary:hover { background: #0e56cb; }
+.primary.orb { background: #111318; }
+.primary.orb:hover { background: #292d35; }
 .secondary { background: #eef1f5; color: #252a32; }
 button:disabled { cursor: not-allowed; opacity: 0.52; }
 
@@ -57,16 +60,21 @@ button:disabled { cursor: not-allowed; opacity: 0.52; }
 .privacy { margin-top: 24px; padding-top: 20px; border-top: 1px solid #e3e7ed; color: #555e6b; font-size: 13px; line-height: 1.5; }
 .privacy strong { color: #252a32; }
 .privacy p { margin: 5px 0 0; }
+.human-badge { margin-top: 28px; padding-top: 24px; border-top: 1px solid #e3e7ed; }
+.human-badge .eyebrow { margin-top: 0; }
+.badge-copy { margin: 10px 0 16px; color: #5e6572; font-size: 14px; line-height: 1.5; }
 
 @media (prefers-color-scheme: dark) {
   :root { color: #f5f7fa; background: #12151a; }
   .page { background: radial-gradient(circle at top, #142d55 0, #12151a 55%); }
   .card { background: #1b2028; border-color: #343b47; }
   .lede, .status span, .privacy { color: #b3bac5; }
+  .badge-copy { color: #b3bac5; }
   .status { background: #262d37; }
   .status-verified { background: #153c25; color: #8de0aa; }
   .status-pending { background: #16325d; color: #9fc0ff; }
   .secondary { background: #303743; color: #f5f7fa; }
   .privacy { border-color: #343b47; }
+  .human-badge { border-color: #343b47; }
   .privacy strong { color: #f5f7fa; }
 }

@@ -2,11 +2,13 @@
 
 > A simple, privacy-conscious human-check tool for Reddit moderators and their communities.
 
-World Human Check helps moderators ask the author of a post or comment to complete a World Selfie Check.
+World Human Check helps moderators ask the author of a post or comment to complete a World Selfie Check. It also lets an Orb-verified user add a separate `🌐 human` badge in the community.
 
 It gives moderators an additional liveness signal when reviewing suspicious activity, bots, spam, or other behavior that may need a human check.
 
 After a successful check, the app can add a verified flair to the Reddit user in that community.
+
+The Orb badge is an optional, self-service feature. It does not replace or change moderator-requested Selfie Check.
 
 ---
 
@@ -38,6 +40,14 @@ Communities can require a successful Human Check for posts, comments, or both. W
 
 After the author completes the check, the app restores the held submission, applies verified flair, and allows future posts or comments normally.
 
+An Orb-verified human badge also satisfies verified posting mode.
+
+### Orb-verified human badge
+
+An Orb-verified user can open the community portal and select **Get human badge**. World proves the user's existing Orb credential, and the app adds a `🌐 human` flair for that community. A moderator does not need to request this flow.
+
+Selfie Check state and Orb badge state are stored separately. Because Reddit has one user-flair slot per community, the Orb badge is shown when both are present. Removing the Orb badge restores the Selfie Check flair if the user completed that check too.
+
 ### Community settings
 
 Moderators can:
@@ -45,6 +55,7 @@ Moderators can:
 - enable or disable human checks,
 - require Human Check for posts or comments,
 - choose the verified flair text, and
+- choose the Orb-verified human badge flair text, and
 - customize the message sent with each request.
 
 Each community manages its own settings and verification records.
@@ -55,7 +66,7 @@ Each community manages its own settings and verification records.
 
 The Reddit user receives a clear private message explaining that a moderator requested a human check.
 
-The user opens the community verification portal, chooses whether to continue, and completes the World Selfie Check. When the check succeeds, the app updates their community verification status and can apply verified flair.
+The user opens the community verification portal, chooses whether to continue, and completes the World Selfie Check. When the check succeeds, the app updates their community verification status and can apply verified flair. Orb-verified users can independently choose to prove that credential and receive the human badge.
 
 ---
 
@@ -65,6 +76,7 @@ The user opens the community verification portal, chooses whether to continue, a
 - The app does not store selfies.
 - The app stores only the verification information needed for the community experience.
 - Users can unlink their verification and delete app-held verification data.
+- Orb badge records are separate from Selfie Check records and can be unlinked independently.
 
 ---
 

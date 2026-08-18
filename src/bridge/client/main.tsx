@@ -1,6 +1,6 @@
 import { StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { IDKit, selfieCheckLegacy } from '@worldcoin/idkit-core';
+import { IDKit, orbLegacy, selfieCheckLegacy } from '@worldcoin/idkit-core';
 import type { BridgePublicSession, IdKitResponse } from '../../shared/contracts.js';
 import './styles.css';
 
@@ -30,18 +30,24 @@ function App() {
 
   const verify = async () => {
     if (!session) return;
+    const isHumanBadge = session.verificationLevel === 'orb';
     setPhase('waiting');
-    setMessage('Waiting for World Selfie Check…');
+    setMessage(isHumanBadge ? 'Waiting for World Orb verification…' : 'Waiting for World Selfie Check…');
     const worldWindow = window.open('', '_blank');
     if (worldWindow) worldWindow.opener = null;
     try {
-      const request = await IDKit.requestWithInviteCode({
+      const requestConfig = {
         app_id: session.appId as `app_${string}`,
         action: session.action,
         rp_context: session.rpContext,
         allow_legacy_proofs: true,
         environment: session.environment,
-      }).preset(selfieCheckLegacy({ signal: session.signal }));
+      } as const;
+      const request = isHumanBadge
+        ? await IDKit.request(requestConfig).preset(orbLegacy({ signal: session.signal }))
+        : await IDKit.requestWithInviteCode(requestConfig).preset(
+            selfieCheckLegacy({ signal: session.signal })
+          );
 
       if (request.connectorURI) {
         if (!worldWindow) throw new Error('Allow pop-ups, then try again.');
@@ -57,7 +63,11 @@ function App() {
       });
       if (!response.ok) throw new Error('The proof returned, but Reddit did not accept it.');
       setPhase('success');
-      setMessage('Human Check complete. Return to Reddit and refresh your status.');
+      setMessage(
+        isHumanBadge
+          ? 'Human badge verified. Return to Reddit and refresh your status.'
+          : 'Human Check complete. Return to Reddit and refresh your status.'
+      );
     } catch (error) {
       worldWindow?.close();
       setPhase('error');
@@ -70,7 +80,15 @@ function App() {
       <section className="panel">
         <div className="globe">🌐</div>
         <p className="eyebrow">WORLD HUMAN CHECK</p>
-        <h1>{phase === 'success' ? 'You’re Human Checked' : 'Complete Selfie Check'}</h1>
+        <h1>
+          {phase === 'success'
+            ? session?.verificationLevel === 'orb'
+              ? 'Human badge verified'
+              : 'You’re Human Checked'
+            : session?.verificationLevel === 'orb'
+              ? 'Verify with your Orb credential'
+              : 'Complete Selfie Check'}
+        </h1>
         <p className={`message ${phase}`}>{message}</p>
         {phase === 'ready' && <button onClick={() => void verify()}>Continue with World</button>}
         {phase === 'waiting' && <div className="spinner" aria-label="Waiting" />}

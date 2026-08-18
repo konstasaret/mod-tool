@@ -77,6 +77,17 @@ export async function assignVerifiedFlair(username: string): Promise<void> {
   });
 }
 
+export async function assignHumanBadgeFlair(username: string): Promise<void> {
+  const flairText = (await settings.get<string>('humanBadgeFlairText'))?.trim() || '🌐 human';
+  await reddit.setUserFlair({
+    subredditName: context.subredditName,
+    username,
+    text: flairText,
+    backgroundColor: '#000000',
+    textColor: 'light',
+  });
+}
+
 export async function isSubredditModerator(username: string): Promise<boolean> {
   const moderators = await reddit
     .getModerators({

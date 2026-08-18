@@ -2,7 +2,7 @@
   "private": true,
   "name": "world-human-check",
   "version": "0.1.0",
-  "description": "Privacy-preserving World Selfie Check moderation tool for Reddit Devvit.",
+  "description": "Privacy-preserving World Selfie Check and Orb human badge for Reddit Devvit.",
   "license": "UNLICENSED",
   "type": "module",
   "scripts": {

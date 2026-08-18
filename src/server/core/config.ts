@@ -5,6 +5,7 @@ export type AppConfig = {
   appId: string;
   rpId: string;
   action: string;
+  humanBadgeAction: string;
   environment: WorldEnvironment;
   signingKey: string;
   signalSecret: string;
@@ -22,10 +23,12 @@ async function requiredSetting(name: string): Promise<string> {
 export async function getAppConfig(): Promise<AppConfig> {
   const environment =
     (await settings.get<WorldEnvironment>('worldEnvironment')) ?? 'production';
+  const action = (await settings.get<string>('worldAction'))?.trim() || 'reddit-human-selfie-v1';
   const config: AppConfig = {
     appId: await requiredSetting('worldAppId'),
     rpId: await requiredSetting('worldRpId'),
-    action: (await settings.get<string>('worldAction'))?.trim() || 'reddit-human-selfie-v1',
+    action,
+    humanBadgeAction: (await settings.get<string>('worldHumanBadgeAction'))?.trim() || action,
     environment,
     signingKey: await requiredSetting('worldRpSigningKey'),
     signalSecret: await requiredSetting('signalHmacSecret'),
