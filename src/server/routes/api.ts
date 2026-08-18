@@ -37,7 +37,7 @@ import {
   unlinkUser,
   type VerificationRequest,
 } from '../core/state.js';
-import { createRpContext, validateProofBinding, verifyProofWithWorld } from '../core/world.js';
+import { createRpContext, validateProofBinding } from '../core/world.js';
 
 export const api = new Hono();
 
@@ -273,7 +273,6 @@ api.post('/human-badge/complete', async (c) => {
       expectedEnvironment: config.environment,
       expectedIdentifier: 'orb',
     });
-    await verifyProofWithWorld({ rpId: config.rpId, proof: body.idkitResponse });
     if (!(await claimHumanBadgeNullifier(action, nullifier, request.id, request.redditUserId))) {
       throw new Error('This World credential already completed this community action');
     }
