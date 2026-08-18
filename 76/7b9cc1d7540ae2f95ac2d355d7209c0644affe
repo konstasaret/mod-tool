@@ -1,0 +1,25 @@
+src/server/routes/api.ts
+  s_67e70ea6c3a04f::t_5e0575182e43ca 5-6,13-18,21-24,33,81-110,226,232,242-293
+  s_67e70ea6c3a04f::t_c0fcaf849675ff 294-296
+src/shared/contracts.ts
+  s_67e70ea6c3a04f::t_5e0575182e43ca 29,48
+  s_67e70ea6c3a04f::t_e14b6841f172eb 49-51
+src/client/main.tsx
+  s_67e70ea6c3a04f::t_5e0575182e43ca 3-8,35-36,43-68,70
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "767b9cc1d7540ae2f95ac2d355d7209c0644affe",
+  "prompts": {},
+  "sessions": {
+    "s_67e70ea6c3a04f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0165e-29b1-73f3-b453-f87c60d055d7",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "mustafakuloglu <mustafakuloglunun@gmail.com>"
+    }
+  }
+}
