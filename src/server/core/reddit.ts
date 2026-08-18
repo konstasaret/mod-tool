@@ -4,8 +4,9 @@ import { restoreHeldItems } from './gating.js';
 import {
   getHeldContent,
   getPortalPostId,
+  getPortalPostVersion,
   removeHeldContent,
-  setPortalPostId,
+  setPortalPost,
 } from './state.js';
 
 export type TargetAuthor = {
@@ -30,8 +31,11 @@ export async function getTargetAuthor(
 }
 
 export async function ensurePortalPost(): Promise<string> {
-  const existing = await getPortalPostId();
-  if (existing) return existing;
+  const [existing, existingVersion] = await Promise.all([
+    getPortalPostId(),
+    getPortalPostVersion(),
+  ]);
+  if (existing && existingVersion === context.appVersion) return existing;
   const post = await reddit.submitCustomPost({
     subredditName: context.subredditName,
     title: 'Orb Human Badge',
@@ -40,7 +44,7 @@ export async function ensurePortalPost(): Promise<string> {
       text: 'Open this post in the current Reddit app to prove an Orb credential and receive a community human badge.',
     },
   });
-  await setPortalPostId(post.id);
+  await setPortalPost(post.id, context.appVersion);
   return post.id;
 }
 

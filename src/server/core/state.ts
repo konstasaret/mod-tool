@@ -29,6 +29,7 @@ export type VerifiedUser = {
 
 const keys = {
   portalPost: 'whc:v1:portal-post',
+  portalPostVersion: 'whc:v1:portal-post-version',
   request: (id: string) => `whc:v1:request:${id}`,
   pendingUser: (userId: string) => `whc:v1:user:${userId}:pending`,
   verifiedUser: (userId: string) => `whc:v1:user:${userId}:verified`,
@@ -270,6 +271,13 @@ export async function getPortalPostId(): Promise<string | undefined> {
   return redis.get(keys.portalPost);
 }
 
-export async function setPortalPostId(postId: string): Promise<void> {
-  await redis.set(keys.portalPost, postId);
+export async function getPortalPostVersion(): Promise<string | undefined> {
+  return redis.get(keys.portalPostVersion);
+}
+
+export async function setPortalPost(postId: string, appVersion: string): Promise<void> {
+  await Promise.all([
+    redis.set(keys.portalPost, postId),
+    redis.set(keys.portalPostVersion, appVersion),
+  ]);
 }
