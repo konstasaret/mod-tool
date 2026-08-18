@@ -1,101 +1,197 @@
-# world-human-check
+# World Human Check
 
-Minimal Reddit Devvit moderation tool for requesting a privacy-preserving World **Selfie Check**, recording the result per subreddit installation, and assigning verified user flair.
+> A Reddit moderator tool that asks a user to complete a privacy-preserving World **Selfie Check**, then gives that user verified flair.
 
-Current playtest target: Devvit app slug `world-app`, World app `app_8ce3b1f93924b643d6ff8225fffdbbf5`, RP `rp_a3400196197df1cd`, and `r/Onlyhumanshere`. These values are public configuration; no signing key is committed.
+## Start here: what is the status?
 
-This repository contains two deployable pieces:
+**The first version is built and installed for testing. It is not ready for a public launch yet.**
 
-1. `Devvit app` — moderation actions, portal post, Reddit-only user mapping, Redis state, World proof verification, replay protection, and flair.
-2. `Verification bridge` — a small external page/server that runs IDKit outside Reddit's CSP-restricted webview and returns the proof through a short-lived Devvit callback.
+| Status     | Item                                                                           |
+| ---------- | ------------------------------------------------------------------------------ |
+| ✅ Done    | Devvit app built and registered as `world-app`                                 |
+| ✅ Done    | Version `0.0.1` installed in `r/Onlyhumanshere`                                |
+| ✅ Done    | Moderator action, user portal, Redis state, World verification, and flair code |
+| ✅ Done    | Privacy and replay-protection tests passing                                    |
+| ⏳ Next    | Deploy the verification bridge and add fresh secrets                           |
+| 🚧 Blocked | Public launch needs Reddit review and external-service approval                |
 
-## V1 flow
+**Your next action:** deploy the included verification bridge to one HTTPS address. Then add that exact hostname to `devvit.json`.
+
+---
+
+## What does this tool do?
+
+Imagine a moderator sees a suspicious post and wants to check whether its author is a live person.
+
+1. The moderator clicks **Request Human Check** on the post or comment.
+2. The author receives a private Reddit message with a verification link.
+3. The author opens the portal and chooses to start a World Selfie Check.
+4. World verifies the result; Reddit never receives the selfie.
+5. The app records success and gives the user subreddit flair.
+
+That is the whole product loop.
+
+### What Selfie Check means
+
+Selfie Check provides **liveness and bot friction**. It helps show that a live person completed the request.
+
+It does **not** prove that the user is globally unique. Orb-based Proof of Human can be added as the next verification level.
+
+---
+
+## Why build this?
+
+Moderators need a tool that is stronger than a CAPTCHA but does not create a database connecting Reddit usernames to World identities.
+
+This app is designed around one rule:
+
+> Reddit knows the Reddit user. World receives only an opaque verification signal. Neither side needs the other side's identity data.
+
+### Privacy in plain English
+
+| Data                  | Where it goes                                     |
+| --------------------- | ------------------------------------------------- |
+| Reddit username       | Stays inside Reddit                               |
+| Raw Reddit user ID    | Stays inside Reddit                               |
+| Selfie                | Handled by the World flow, not stored by this app |
+| Opaque derived signal | Sent to the bridge and World for proof binding    |
+| Verification status   | Stored in this installation's Reddit Redis        |
+
+The opaque signal is derived using an HMAC over the subreddit, Reddit user ID, and verification action. It cannot be used as a Reddit username and changes across communities/actions.
+
+Users can unlink and delete their app-held verification data.
+
+---
+
+## What did we build?
+
+The project has two small parts:
+
+| Part                    | Job                                                                                                         |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------- |
+| **Devvit app**          | Shows Reddit UI, handles moderator actions, stores state, verifies proofs, and assigns flair                |
+| **Verification bridge** | Opens World IDKit outside Reddit's restricted webview and returns the result through a short-lived callback |
 
 ```text
-Moderator selects “Request Human Check” on a post/comment
-  → Devvit stores a pending request in installation-scoped Redis
-  → app sends the author a Reddit private message with the portal link
-  → author opens the portal and explicitly starts verification
-  → Devvit derives HMAC(subreddit ID + Reddit user ID + action)
-  → Devvit creates a signed World request and one-time callback URL
-  → server sends those to the trusted verification bridge
-  → user completes Selfie Check through World
-  → bridge returns the untouched IDKit result to Devvit
-  → Devvit calls POST developer.world.org/api/v4/verify/{rp_id}
-  → Devvit enforces action, environment, signal hash, and nullifier uniqueness
-  → per-install status is saved and Reddit flair is assigned
+Moderator requests check
+        ↓
+Reddit user opens portal
+        ↓
+Devvit creates opaque signal + signed request
+        ↓
+Verification bridge opens World
+        ↓
+World Selfie Check
+        ↓
+Devvit verifies proof with World
+        ↓
+Redis status saved + Reddit flair added
 ```
 
-Reddit usernames and raw Reddit user IDs are never sent to the bridge or World. The bridge receives only a random request ID, an opaque HMAC-derived signal, public World configuration, signed RP context, and a one-time callback URL.
+### Included in V1
 
-## What is implemented
+- Verification portal created when the app is installed.
+- Moderator actions to request a check or view status.
+- Per-community settings for enabling the tool, flair, and message copy.
+- Server-side World RP signing and World v4 proof verification.
+- Per-install Redis state, replay protection, unlinking, and data deletion.
 
-- Automatic verification portal creation on subreddit install.
-- Moderator post/comment actions to request or inspect a Human Check.
-- App settings for enabling the tool, flair text, and request copy.
-- Server-side World RP signing and `/api/v4/verify/{rp_id}` plumbing.
-- Per-install Redis request, user, nullifier, and portal state.
-- Signal/action/environment binding plus nullifier replay protection.
-- Reddit private-message request and verified user flair assignment.
-- User-controlled unlink/data deletion.
-- Selfie Check as the only V1 credential; the credential boundary is isolated so Proof of Human can be added next.
+Also included: Reddit private-message delivery, verified flair assignment, signal/action/environment binding, and a clean credential boundary for adding Orb verification later.
 
-## Required user inputs
+<details>
+<summary><strong>Show the detailed verification flow</strong></summary>
 
-### Reddit account/setup
+| Phase        | What happens                                                                 |
+| ------------ | ---------------------------------------------------------------------------- |
+| Request      | Devvit saves a pending request in installation-scoped Redis                  |
+| Message      | Devvit sends the author a private message containing the Reddit portal link  |
+| Consent      | The portal asks the user to explicitly start verification                    |
+| Privacy      | Devvit derives `HMAC(subreddit ID + Reddit user ID + action)`                |
+| Signing      | Devvit creates the signed World request and one-time callback URL            |
+| Selfie Check | The trusted bridge starts IDKit and returns the untouched result             |
+| Verification | Devvit calls `POST developer.world.org/api/v4/verify/{rp_id}`                |
+| Protection   | Devvit checks the action, environment, signal hash, and nullifier uniqueness |
+| Success      | Devvit saves the status and assigns subreddit flair                          |
 
-- A Reddit account connected at [Reddit for Developers](https://developers.reddit.com/).
-- Moderator access to a private test subreddit.
-- The existing Devvit app registration with slug `world-app`.
-- Limited-access approval for **External Endpoints**.
-- HTTP Fetch approval for `developer.world.org` and the bridge's exact hostname.
-- Written Reddit approval for the Reddit → external World verification → Reddit handoff before public launch.
-- App-owned Terms of Service and Privacy Policy URLs for Reddit review.
+</details>
 
-No traditional Reddit OAuth client ID or client secret is required.
+---
 
-### World account/setup
+## What do I need to provide?
 
-- A dedicated app/RP in the [World Developer Portal](https://developer.world.org/).
-- Selfie Check access enabled for that app (currently a Beta/preview credential in the public docs).
-- `app_id` — public, shaped like `app_...`.
-- `rp_id` — public, shaped like `rp_...`.
-- `signing_key` — secret; it is only read by the Devvit server.
-- An enabled action, defaulted in this code to `reddit-human-selfie-v1`.
-- A choice of `staging` or `production`; the proof and configured environment must match.
+### Already configured
 
-Do not paste production signing keys into source files, GitHub issues, or chat.
+| Input           | Current value                          |
+| --------------- | -------------------------------------- |
+| Devvit app slug | `world-app`                            |
+| Test community  | `r/Onlyhumanshere`                     |
+| World app ID    | `app_8ce3b1f93924b643d6ff8225fffdbbf5` |
+| World RP ID     | `rp_a3400196197df1cd`                  |
+| Default action  | `reddit-human-selfie-v1`               |
 
-### Verification bridge/setup
+These are public configuration values. No signing key is committed.
 
-- An HTTPS hostname for the bridge, such as a TFH-controlled service origin.
-- A randomly generated server-to-server API token.
-- A single-instance or shared-state runtime for V1. The included bridge uses an in-memory, 10-minute session store and is intended for a narrow playtest, not multi-instance production.
-- Add the bridge's **exact hostname** (no protocol, wildcard, or path) to `permissions.http.domains` in `devvit.json` before upload.
+### Still required
 
-## Secrets and settings
+| Input                      | What to do                                                  |
+| -------------------------- | ----------------------------------------------------------- |
+| Fresh World RP signing key | Create or rotate it in the World Developer Portal           |
+| Signal HMAC secret         | Generate a new random 32-byte value                         |
+| Bridge API token           | Generate another random 32-byte value                       |
+| Bridge URL                 | Deploy the bridge to an HTTPS origin                        |
+| Reddit approvals           | Request external endpoint, HTTP, and World handoff approval |
 
-The following are Devvit **global developer settings**, not per-subreddit moderator settings:
+**Never paste a signing key into source code, GitHub, an issue, or chat.** Enter it only through Devvit's encrypted settings prompt.
 
-| Setting | Secret | Source |
-|---|---:|---|
-| `worldAppId` | No | World Developer Portal `app_id` (public default configured) |
-| `worldRpId` | No | World Developer Portal `rp_id` (public default configured) |
-| `worldAction` | No | Dedicated action name |
-| `worldEnvironment` | No | `staging` or `production` |
-| `worldRpSigningKey` | **Yes** | World RP signing key |
-| `signalHmacSecret` | **Yes** | New random 32+ byte secret |
-| `worldBridgeBaseUrl` | No | Bridge HTTPS origin |
-| `worldBridgeApiToken` | **Yes** | Same value as bridge `BRIDGE_API_TOKEN` |
+---
 
-Generate the two app-owned random secrets locally; do not reuse an existing credential:
+## Setup: one checkpoint at a time
+
+### Checkpoint 1 — Confirm accounts
+
+You need:
+
+- A Reddit account connected to [Reddit for Developers](https://developers.reddit.com/).
+- Moderator access to the small test subreddit.
+- Access to the `world-app` Devvit registration.
+- Access to the World app/RP in the [World Developer Portal](https://developer.world.org/).
+- Selfie Check enabled for that RP.
+
+You do **not** need a traditional Reddit OAuth client ID or client secret.
+
+**Done when:** you can access both developer portals and moderate `r/Onlyhumanshere`.
+
+### Checkpoint 2 — Create fresh secrets
+
+Generate two app-owned secrets locally:
 
 ```bash
 openssl rand -hex 32  # signalHmacSecret
 openssl rand -hex 32  # worldBridgeApiToken / BRIDGE_API_TOKEN
 ```
 
-After the app is installed once, set values interactively so secrets do not enter shell history:
+Also create or rotate the World RP signing key in the World Developer Portal.
+
+**Done when:** you have three separate secret values stored in a password manager.
+
+### Checkpoint 3 — Deploy the bridge
+
+The bridge needs:
+
+- One HTTPS hostname.
+- `BRIDGE_API_TOKEN` set to the bridge API token from Checkpoint 2.
+- A single running instance for this narrow V1 playtest.
+- The included bridge client and server build.
+
+The current session store is in memory and expires sessions after 10 minutes. Multi-instance production deployment needs shared storage.
+
+Add the bridge's exact hostname—without protocol, wildcard, or path—to `permissions.http.domains` in `devvit.json`.
+
+**Done when:** the bridge is reachable over HTTPS and its hostname is in `devvit.json`.
+
+### Checkpoint 4 — Add Devvit settings
+
+Run these commands one at a time. Each command opens an interactive prompt so the secret does not enter your shell history.
 
 ```bash
 npx devvit settings set worldRpSigningKey
@@ -104,65 +200,99 @@ npx devvit settings set worldBridgeBaseUrl
 npx devvit settings set worldBridgeApiToken
 ```
 
-Set `worldAction` and `worldEnvironment` only if their defaults are not correct.
+Keep the default `worldAction` and `worldEnvironment` unless they do not match the World Portal configuration.
 
-## Local development
+**Done when:** all four settings exist and no secret appears in a tracked file.
 
-Requires Node.js 24+.
+### Checkpoint 5 — Test it
 
 ```bash
 npm install
 npm run check
 npm run build
-```
-
-Bridge smoke test:
-
-```bash
-cp .env.example .env
-# Fill BRIDGE_API_TOKEN; keep .env uncommitted.
-npm run build:bridge
-set -a; source .env; set +a
-npm run bridge:start
-```
-
-Devvit playtest:
-
-```bash
 npm run login
 npm run dev
 ```
 
-The default playtest subreddit is `r/Onlyhumanshere`. The real end-to-end World flow cannot run until the bridge is on an approved HTTPS origin and Reddit enables External Endpoints for this app.
+The default playtest target is `r/Onlyhumanshere`.
 
-## Fetch Domains
+**Done when:** a moderator can request a check and the user sees the verification portal. The full World round trip also requires the Reddit approvals below.
 
-The app requests these server-side fetch domains:
+---
 
-- `developer.world.org` — forwards the untouched IDKit result to World's documented v4 proof verification endpoint.
-- `<exact bridge hostname>` — creates a short-lived Selfie Check session. Replace this placeholder in `devvit.json` with the deployed hostname before upload/review.
+## How a moderator uses it
 
-The Devvit webview itself makes no external network requests.
+1. Open a post or comment in the test subreddit.
+2. Open the moderation menu.
+3. Choose **Request Human Check**.
+4. Use **View Human Check status** to inspect progress.
+5. After success, confirm the user's verified flair appears.
 
-## Current policy/review blockers
+The mod settings control whether the tool is enabled, the request message, and the flair text.
 
-1. **External World handoff:** Devvit Rules say apps should not link to external apps and written approval is required for exceptions. The World App/invite-code handoff must be pre-cleared.
-2. **External Endpoints:** the secure return path depends on a limited-access Devvit feature that requires allowlisting.
-3. **HTTP Fetch:** `developer.world.org` and the exact bridge host need app-specific approval; fetching also requires app-owned Terms and Privacy Policy.
-4. **Account-linking classification:** the design sends only an opaque ID and supports unlinking, but Reddit should confirm whether it treats World verification as an “account-linked service” and whether SOC 2 / penetration-test evidence is required.
-5. **Selfie Check access:** the credential is marked Beta/preview in current World documentation and must be enabled for the RP.
+---
 
-See [docs/REDDIT_REVIEW_CHECKLIST.md](docs/REDDIT_REVIEW_CHECKLIST.md) for the approval package and [docs/PRIVACY_DATA_MAP.md](docs/PRIVACY_DATA_MAP.md) for precise data handling.
+## Why is public launch blocked?
 
-## V1 limitations
+The code is ready for a narrow playtest. Reddit still needs to approve the external parts.
 
-- Manual moderator request only; there is no AutoModerator gating yet.
-- Selfie Check means liveness/bot friction, **not one-person-one-account**.
-- User flair is subreddit-scoped and may replace an existing user flair; use a dedicated flair policy in the test subreddit.
-- The bridge session store is memory-only and should run as one instance for playtesting.
-- Private-message delivery can be affected by Reddit platform limits.
-- Public launch is blocked until Reddit review/approvals and production privacy/terms pages are complete.
+| Blocker             | Approval needed                                                           |
+| ------------------- | ------------------------------------------------------------------------- |
+| World App handoff   | Written exception for sending the user into an external verification flow |
+| External Endpoints  | Allowlisting for the secure callback into Devvit                          |
+| HTTP Fetch          | Approval for `developer.world.org` and the exact bridge hostname          |
+| Account linking     | Confirmation that the opaque-ID design satisfies Reddit's requirements    |
+| Selfie Check access | World must enable this Beta/preview credential for the RP                 |
 
-## Adding Orb / Proof of Human next
+Reddit review will also need app-owned Terms of Service and Privacy Policy URLs. Depending on Reddit's classification, it may request SOC 2 or penetration-test evidence.
 
-Keep the same Reddit, Redis, callback, and proof-verification path. Add a second verification level and use the World ID 4.0 `proofOfHuman` preset in the bridge. Use a separate action and flair, then expose the level in moderator settings. Do not label Selfie Check users as unique humans.
+Use [docs/REDDIT_REVIEW_CHECKLIST.md](docs/REDDIT_REVIEW_CHECKLIST.md) for the approval package. Use [docs/PRIVACY_DATA_MAP.md](docs/PRIVACY_DATA_MAP.md) for the exact data flow.
+
+---
+
+## Important V1 limits
+
+- Requests are manual; there is no AutoModerator gating yet.
+- Selfie Check shows liveness, not one-person-one-account uniqueness.
+- Verified flair may replace the user's existing subreddit flair.
+- Bridge sessions are memory-only and intended for a single playtest instance.
+- Reddit platform limits can affect private-message delivery.
+
+Public launch remains blocked until Reddit approves the integration and production Terms/Privacy pages are live.
+
+---
+
+## Add Orb / Proof of Human later
+
+The existing Reddit, Redis, callback, and proof-verification path can stay in place.
+
+The next version should:
+
+1. Add a second verification level using World ID 4.0 `proofOfHuman`.
+2. Give it a separate World action.
+3. Add distinct moderator settings and flair.
+4. Keep Selfie Check labeled as liveness—not unique-human proof.
+
+---
+
+## Quick troubleshooting
+
+| Problem                                    | Likely cause                          | Fix                                                         |
+| ------------------------------------------ | ------------------------------------- | ----------------------------------------------------------- |
+| Portal opens but verification cannot start | Bridge URL or token missing           | Complete Checkpoints 3 and 4                                |
+| World verification fails                   | Action/environment/RP mismatch        | Match Devvit settings to the World Portal                   |
+| Devvit cannot call World or the bridge     | HTTP hostname not approved            | Update `devvit.json` and request Reddit approval            |
+| Result cannot return to Reddit             | External Endpoints unavailable        | Request Devvit limited-access allowlisting                  |
+| Flair does not appear                      | App moderation access or flair policy | Check installation permissions and subreddit flair settings |
+
+## Useful project commands
+
+```bash
+npm run check          # TypeScript + tests
+npm run build          # Devvit app + bridge build
+npm run build:bridge   # Bridge only
+npm run bridge:start   # Run bridge locally
+npm run dev            # Devvit playtest
+```
+
+**Best next move:** finish Checkpoint 3 by choosing the bridge's HTTPS hosting location.
