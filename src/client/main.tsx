@@ -1,12 +1,21 @@
 import { StrictMode, useCallback, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { IDKit, orbLegacy } from '@worldcoin/idkit-core';
 import type {
   IdKitResponse,
   PortalState,
   StartVerificationResponse,
 } from '../shared/contracts.js';
 import './styles.css';
+
+const WORLD_BRIDGE_ORIGIN = 'https://mustafakuloglu.github.io';
+const WORLD_BRIDGE_URL = `${WORLD_BRIDGE_ORIGIN}/reddit-orb-human-badge-bridge/`;
+
+type BridgeProofMessage = {
+  type?: string;
+  nonce?: string;
+  requestId?: string;
+  idkitResponse?: IdKitResponse;
+};
 
 function errorMessage(caught: unknown, fallback: string): string {
   if (caught instanceof Error && caught.message) return caught.message;
@@ -18,6 +27,50 @@ function errorMessage(caught: unknown, fallback: string): string {
     }
   }
   return fallback;
+}
+
+function waitForBridgeProof(input: {
+  bridgeWindow: Window;
+  nonce: string;
+  requestId: string;
+}): Promise<IdKitResponse> {
+  return new Promise((resolve, reject) => {
+    let timeoutId = 0;
+    let closedIntervalId = 0;
+
+    const cleanup = () => {
+      window.removeEventListener('message', handleMessage);
+      window.clearTimeout(timeoutId);
+      window.clearInterval(closedIntervalId);
+    };
+    const fail = (message: string) => {
+      cleanup();
+      reject(new Error(message));
+    };
+    const handleMessage = (event: MessageEvent<BridgeProofMessage>) => {
+      if (event.origin !== WORLD_BRIDGE_ORIGIN || event.source !== input.bridgeWindow) return;
+      const message = event.data;
+      if (
+        message?.type !== 'orb-human-badge-proof' ||
+        message.nonce !== input.nonce ||
+        message.requestId !== input.requestId ||
+        !message.idkitResponse
+      ) {
+        return;
+      }
+      cleanup();
+      resolve(message.idkitResponse);
+    };
+
+    window.addEventListener('message', handleMessage);
+    timeoutId = window.setTimeout(
+      () => fail('World verification timed out. Try again.'),
+      10 * 60 * 1000
+    );
+    closedIntervalId = window.setInterval(() => {
+      if (input.bridgeWindow.closed) fail('World verification window was closed.');
+    }, 500);
+  });
 }
 
 function App() {
@@ -45,7 +98,6 @@ function App() {
 
   const start = async () => {
     const worldWindow = window.open('', '_blank');
-    if (worldWindow) worldWindow.opener = null;
     setLoading(true);
     setError(undefined);
     try {
@@ -54,25 +106,24 @@ function App() {
       if (!result.ok) throw new Error(result.error);
       if (!('session' in result)) throw new Error('World verification session was not returned.');
       const { session } = result;
-      const request = await IDKit.request({
-        app_id: session.appId as `app_${string}`,
-        action: session.action,
-        rp_context: session.rpContext,
-        allow_legacy_proofs: true,
-        environment: session.environment,
-      }).preset(orbLegacy({ signal: session.signal }));
-      if (!request.connectorURI) throw new Error('World did not return a verification link.');
       if (!worldWindow) throw new Error('Allow pop-ups, then try again.');
-      worldWindow.location.href = request.connectorURI;
-
-      const completion = await request.pollUntilCompletion({ timeout: 9 * 60 * 1000 });
-      if (!completion.success) throw new Error(`World verification ended: ${completion.error}`);
+      const nonce = crypto.randomUUID();
+      const proofPromise = waitForBridgeProof({
+        bridgeWindow: worldWindow,
+        nonce,
+        requestId: session.requestId,
+      });
+      const payload = encodeURIComponent(
+        JSON.stringify({ nonce, openerOrigin: window.location.origin, session })
+      );
+      worldWindow.location.href = `${WORLD_BRIDGE_URL}#payload=${payload}`;
+      const idkitResponse = await proofPromise;
       const completionResponse = await fetch('/api/human-badge/complete', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           requestId: session.requestId,
-          idkitResponse: completion.result as unknown as IdKitResponse,
+          idkitResponse,
         }),
       });
       if (!completionResponse.ok) throw new Error('Reddit did not accept the World proof.');
