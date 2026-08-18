@@ -8,6 +8,18 @@ import type {
 } from '../shared/contracts.js';
 import './styles.css';
 
+function errorMessage(caught: unknown, fallback: string): string {
+  if (caught instanceof Error && caught.message) return caught.message;
+  if (typeof caught === 'string' && caught) return caught;
+  if (caught && typeof caught === 'object') {
+    for (const key of ['message', 'error', 'error_code', 'code'] as const) {
+      const value = (caught as Record<string, unknown>)[key];
+      if (typeof value === 'string' && value) return value;
+    }
+  }
+  return fallback;
+}
+
 function App() {
   const [state, setState] = useState<PortalState>();
   const [loading, setLoading] = useState(true);
@@ -67,8 +79,9 @@ function App() {
       worldWindow.close();
       await refresh();
     } catch (caught) {
+      console.error('Orb verification failed', caught);
       worldWindow?.close();
-      setError(caught instanceof Error ? caught.message : 'Orb verification could not start.');
+      setError(errorMessage(caught, 'Orb verification could not start.'));
     } finally {
       setLoading(false);
     }
