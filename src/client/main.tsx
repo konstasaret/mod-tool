@@ -1,7 +1,11 @@
 import { StrictMode, useCallback, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { navigateTo } from '@devvit/web/client';
-import type { PortalState, StartVerificationResponse } from '../shared/contracts.js';
+import { IDKit, orbLegacy } from '@worldcoin/idkit-core';
+import type {
+  IdKitResponse,
+  PortalState,
+  StartVerificationResponse,
+} from '../shared/contracts.js';
 import './styles.css';
 
 function App() {
@@ -28,14 +32,42 @@ function App() {
   }, [refresh]);
 
   const start = async () => {
+    const worldWindow = window.open('', '_blank');
+    if (worldWindow) worldWindow.opener = null;
     setLoading(true);
     setError(undefined);
     try {
       const response = await fetch('/api/human-badge/start', { method: 'POST' });
       const result = (await response.json()) as StartVerificationResponse;
       if (!result.ok) throw new Error(result.error);
-      navigateTo(result.launchUrl);
+      if (!('session' in result)) throw new Error('World verification session was not returned.');
+      const { session } = result;
+      const request = await IDKit.request({
+        app_id: session.appId as `app_${string}`,
+        action: session.action,
+        rp_context: session.rpContext,
+        allow_legacy_proofs: true,
+        environment: session.environment,
+      }).preset(orbLegacy({ signal: session.signal }));
+      if (!request.connectorURI) throw new Error('World did not return a verification link.');
+      if (!worldWindow) throw new Error('Allow pop-ups, then try again.');
+      worldWindow.location.href = request.connectorURI;
+
+      const completion = await request.pollUntilCompletion({ timeout: 9 * 60 * 1000 });
+      if (!completion.success) throw new Error(`World verification ended: ${completion.error}`);
+      const completionResponse = await fetch('/api/human-badge/complete', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          requestId: session.requestId,
+          idkitResponse: completion.result as unknown as IdKitResponse,
+        }),
+      });
+      if (!completionResponse.ok) throw new Error('Reddit did not accept the World proof.');
+      worldWindow.close();
+      await refresh();
     } catch (caught) {
+      worldWindow?.close();
       setError(caught instanceof Error ? caught.message : 'Orb verification could not start.');
     } finally {
       setLoading(false);

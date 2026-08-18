@@ -26,6 +26,7 @@ export type PortalState = {
 
 export type StartVerificationResponse =
   | { ok: true; launchUrl: string; expiresAt: number }
+  | { ok: true; session: DirectVerificationSession }
   | { ok: false; error: string };
 
 export type BridgeSessionInput = {
@@ -41,6 +42,10 @@ export type BridgeSessionInput = {
 };
 
 export type BridgePublicSession = Omit<BridgeSessionInput, 'callbackUrl' | 'requestId'> & {
+  expiresAt: number;
+};
+
+export type DirectVerificationSession = Omit<BridgeSessionInput, 'callbackUrl'> & {
   expiresAt: number;
 };
 

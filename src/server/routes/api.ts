@@ -2,15 +2,26 @@ import { Hono } from 'hono';
 import { context, externalEndpoints, reddit, settings } from '@devvit/web/server';
 import type {
   BridgeSessionInput,
+  DirectVerificationSession,
+  IdKitResponse,
   PortalState,
   StartVerificationResponse,
   VerificationLevel,
 } from '../../shared/contracts.js';
 import { getAppConfig, isConfigured, isEnabled, type AppConfig } from '../core/config.js';
 import { deriveOpaqueSignal } from '../core/privacy.js';
-import { assignVerifiedFlair, getHumanBadgeFlairText } from '../core/reddit.js';
+import {
+  assignHumanBadgeFlair,
+  assignVerifiedFlair,
+  getHumanBadgeFlairText,
+  restoreHeldContent,
+} from '../core/reddit.js';
 import { ensureHumanBadgeRequest } from '../core/requests.js';
 import {
+  claimHumanBadgeNullifier,
+  completeHumanBadgeRequest,
+  failHumanBadgeRequest,
+  getHumanBadgeRequest,
   getHumanBadgeUser,
   getPendingHumanBadgeRequestForUser,
   getPendingRequestForUser,
@@ -19,7 +30,7 @@ import {
   unlinkUser,
   type VerificationRequest,
 } from '../core/state.js';
-import { createRpContext } from '../core/world.js';
+import { createRpContext, validateProofBinding, verifyProofWithWorld } from '../core/world.js';
 
 export const api = new Hono();
 
@@ -65,6 +76,36 @@ async function createBridgeLaunch(input: {
   const result = (await response.json()) as { launchUrl?: string; expiresAt?: number };
   if (!result.launchUrl || !result.expiresAt) throw new Error('Bridge returned an invalid session');
   return { launchUrl: result.launchUrl, expiresAt: result.expiresAt };
+}
+
+function createDirectVerificationSession(input: {
+  request: VerificationRequest;
+  config: AppConfig;
+  action: string;
+  verificationLevel: VerificationLevel;
+}): DirectVerificationSession {
+  const signal = deriveOpaqueSignal({
+    secret: input.config.signalSecret,
+    subredditId: context.subredditId,
+    redditUserId: input.request.redditUserId,
+    action: input.action,
+  });
+  const rpContext = createRpContext({
+    signingKey: input.config.signingKey,
+    rpId: input.config.rpId,
+    action: input.action,
+  });
+  return {
+    requestId: input.request.id,
+    appId: input.config.appId,
+    rpId: input.config.rpId,
+    action: input.action,
+    signal,
+    rpContext,
+    environment: input.config.environment,
+    verificationLevel: input.verificationLevel,
+    expiresAt: rpContext.expires_at * 1000,
+  };
 }
 
 api.get('/init', async (c) => {
@@ -182,19 +223,74 @@ api.post('/human-badge/start', async (c) => {
       username: user.username,
     });
     const config = await getAppConfig();
-    const result = await createBridgeLaunch({
+    const session = createDirectVerificationSession({
       request,
       config,
       action: config.humanBadgeAction,
       verificationLevel: 'orb',
     });
-    return c.json<StartVerificationResponse>({ ok: true, ...result });
+    return c.json<StartVerificationResponse>({ ok: true, session });
   } catch (error) {
     console.error('Human badge verification start failed', error);
     return c.json<StartVerificationResponse>(
       { ok: false, error: 'Human badge verification could not start. Ask a moderator to check app setup.' },
       500
     );
+  }
+});
+
+api.post('/human-badge/complete', async (c) => {
+  let requestId: string | undefined;
+  try {
+    if (!context.userId) return c.json({ ok: false, error: 'Sign in to Reddit first.' }, 401);
+    const body = await c.req.json<{ requestId?: string; idkitResponse?: IdKitResponse }>();
+    requestId = body.requestId;
+    if (!requestId || !body.idkitResponse) throw new Error('Missing completion payload');
+
+    const request = await getHumanBadgeRequest(requestId);
+    if (!request || request.status !== 'pending') throw new Error('Verification request is not pending');
+    if (request.redditUserId !== context.userId) throw new Error('Reddit user does not match');
+
+    const config = await getAppConfig();
+    const action = config.humanBadgeAction;
+    const signal = deriveOpaqueSignal({
+      secret: config.signalSecret,
+      subredditId: context.subredditId,
+      redditUserId: request.redditUserId,
+      action,
+    });
+    const nullifier = validateProofBinding({
+      proof: body.idkitResponse,
+      expectedAction: action,
+      expectedSignal: signal,
+      expectedEnvironment: config.environment,
+      expectedIdentifier: 'orb',
+    });
+    await verifyProofWithWorld({ rpId: config.rpId, proof: body.idkitResponse });
+    if (!(await claimHumanBadgeNullifier(action, nullifier, request.id, request.redditUserId))) {
+      throw new Error('This World credential already completed this community action');
+    }
+    await completeHumanBadgeRequest(request, action, nullifier);
+
+    const postProcessing = await Promise.allSettled([
+      assignHumanBadgeFlair(request.redditUsername),
+      restoreHeldContent(request.redditUserId),
+    ]);
+    for (const result of postProcessing) {
+      if (result.status === 'rejected') {
+        console.error('Human badge completed, but post-processing failed', result.reason);
+      }
+    }
+    return c.json({ ok: true });
+  } catch (error) {
+    console.error(`Human badge completion failed for request ${requestId ?? 'unknown'}`, error);
+    if (requestId) {
+      const request = await getHumanBadgeRequest(requestId);
+      if (request?.status === 'pending') {
+        await failHumanBadgeRequest(request, 'verification_failed');
+      }
+    }
+    return c.json({ ok: false, error: 'Verification was not accepted.' }, 400);
   }
 });
 
