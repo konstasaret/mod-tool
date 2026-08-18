@@ -1,0 +1,135 @@
+{
+  "$schema": "https://developers.reddit.com/schema/config-file.v1.json",
+  "name": "world-human-check",
+  "post": {
+    "dir": "dist/client",
+    "entrypoints": {
+      "default": {
+        "inline": true,
+        "entry": "index.html",
+        "height": "tall"
+      }
+    }
+  },
+  "server": {
+    "dir": "dist/server",
+    "entry": "index.cjs",
+    "externalEndpoints": {
+      "worldVerificationCompleted": {
+        "endpoint": "/external/world/verification-completed",
+        "scopes": ["install"]
+      }
+    }
+  },
+  "permissions": {
+    "http": {
+      "enable": true,
+      "domains": ["developer.world.org"]
+    },
+    "redis": true,
+    "reddit": {
+      "enable": true,
+      "scope": "moderator"
+    }
+  },
+  "settings": {
+    "global": {
+      "worldAppId": {
+        "type": "string",
+        "label": "World app ID",
+        "helpText": "Public app_id from the World Developer Portal."
+      },
+      "worldRpId": {
+        "type": "string",
+        "label": "World relying-party ID",
+        "helpText": "Public rp_id from the World Developer Portal."
+      },
+      "worldAction": {
+        "type": "string",
+        "label": "Selfie Check action",
+        "defaultValue": "reddit-human-selfie-v1"
+      },
+      "worldEnvironment": {
+        "type": "select",
+        "label": "World environment",
+        "options": [
+          { "label": "Production", "value": "production" },
+          { "label": "Staging", "value": "staging" }
+        ],
+        "defaultValue": "production"
+      },
+      "worldRpSigningKey": {
+        "type": "string",
+        "label": "World RP signing key",
+        "helpText": "Server-only signing key from the World Developer Portal.",
+        "isSecret": true
+      },
+      "signalHmacSecret": {
+        "type": "string",
+        "label": "Opaque signal HMAC secret",
+        "helpText": "Server-only random secret used to derive unlinkable World signals.",
+        "isSecret": true
+      },
+      "worldBridgeBaseUrl": {
+        "type": "string",
+        "label": "Verification bridge base URL",
+        "helpText": "HTTPS origin of the separately hosted bridge. Add its exact hostname to permissions.http.domains before upload."
+      },
+      "worldBridgeApiToken": {
+        "type": "string",
+        "label": "Verification bridge API token",
+        "helpText": "Shared server-to-server token; must equal BRIDGE_API_TOKEN on the bridge.",
+        "isSecret": true
+      }
+    },
+    "subreddit": {
+      "enabled": {
+        "type": "boolean",
+        "label": "Enable World Human Check",
+        "defaultValue": true
+      },
+      "flairText": {
+        "type": "string",
+        "label": "Verified user flair",
+        "defaultValue": "🌐 Human Checked"
+      },
+      "requestMessage": {
+        "type": "paragraph",
+        "label": "Verification request message",
+        "defaultValue": "A moderator has requested a privacy-preserving human check. Open the community verification portal to continue."
+      }
+    }
+  },
+  "menu": {
+    "items": [
+      {
+        "label": "Open World Human Check portal",
+        "description": "Create or open the community verification entry point.",
+        "location": "subreddit",
+        "forUserType": "moderator",
+        "endpoint": "/internal/menu/open-portal"
+      },
+      {
+        "label": "Request Human Check",
+        "description": "Request a Selfie Check from this post or comment author.",
+        "location": ["post", "comment"],
+        "forUserType": "moderator",
+        "endpoint": "/internal/menu/request-human-check"
+      },
+      {
+        "label": "View Human Check status",
+        "description": "Show this author's community-scoped verification status.",
+        "location": ["post", "comment"],
+        "forUserType": "moderator",
+        "endpoint": "/internal/menu/view-status"
+      }
+    ]
+  },
+  "triggers": {
+    "onAppInstall": "/internal/triggers/on-app-install"
+  },
+  "scripts": {
+    "dev": "vite build --watch",
+    "build": "vite build"
+  }
+}

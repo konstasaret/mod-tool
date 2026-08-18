@@ -1,0 +1,44 @@
+{
+  "private": true,
+  "name": "world-human-check",
+  "version": "0.1.0",
+  "description": "Privacy-preserving World Selfie Check moderation tool for Reddit Devvit.",
+  "license": "UNLICENSED",
+  "type": "module",
+  "scripts": {
+    "build": "vite build && vite build --config vite.bridge.config.ts",
+    "build:devvit": "vite build",
+    "build:bridge": "vite build --config vite.bridge.config.ts",
+    "dev": "devvit playtest",
+    "bridge:dev": "tsx src/bridge/server.ts",
+    "bridge:start": "tsx src/bridge/server.ts",
+    "check": "npm run typecheck && npm run test",
+    "typecheck": "tsc --build",
+    "test": "node --import tsx --test \"src/**/*.test.ts\"",
+    "login": "devvit login",
+    "upload": "npm run check && devvit upload",
+    "publish": "npm run check && devvit publish"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "dependencies": {
+    "@devvit/start": "0.14.1",
+    "@devvit/web": "0.14.1",
+    "@hono/node-server": "2.0.12",
+    "@worldcoin/idkit-core": "4.2.3",
+    "devvit": "0.14.1",
+    "hono": "4.12.32",
+    "react": "19.2.0",
+    "react-dom": "19.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "6.0.5",
+    "tsx": "4.23.12",
+    "typescript": "7.0.2",
+    "vite": "8.2.1"
+  }
+}
