@@ -68,7 +68,8 @@ export async function isHumanBadgeConfigured(): Promise<boolean> {
   try {
     await getWorldConfig();
     return true;
-  } catch {
+  } catch (error) {
+    console.error('Human badge configuration is incomplete', error);
     return false;
   }
 }
