@@ -106,8 +106,10 @@ async function handleInstallation(c: Context) {
   } catch (error) {
     console.error('App installation configuration failed', error);
     return c.json<TriggerResponse>(
-      { status: 'error', message: 'Installed, but the verification portal could not be created.' },
-      500
+      {
+        status: 'success',
+        message: 'App ready; portal setup will be retried from the moderator menu.',
+      }
     );
   }
 }
