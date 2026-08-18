@@ -1,7 +1,10 @@
 import { redis } from '@devvit/web/server';
 import type { VerificationLevel, VerificationStatus } from '../../shared/contracts.js';
+import { canHoldContent, type HeldContent } from './gating.js';
 
 const REQUEST_TTL_MS = 24 * 60 * 60 * 1000;
+const HELD_CONTENT_TTL_SECONDS = 24 * 60 * 60;
+const MAX_HELD_CONTENT_PER_USER = 5;
 
 export type VerificationRequest = {
   id: string;
@@ -29,6 +32,7 @@ const keys = {
   request: (id: string) => `whc:v1:request:${id}`,
   pendingUser: (userId: string) => `whc:v1:user:${userId}:pending`,
   verifiedUser: (userId: string) => `whc:v1:user:${userId}:verified`,
+  heldUser: (userId: string) => `whc:v1:user:${userId}:held`,
   nullifier: (action: string, decimalNullifier: string) =>
     `whc:v1:nullifier:${action}:${decimalNullifier}`,
 };
@@ -56,6 +60,39 @@ export async function getPendingRequestForUser(
 export async function getVerifiedUser(userId: string): Promise<VerifiedUser | undefined> {
   const raw = await redis.get(keys.verifiedUser(userId));
   return raw ? (JSON.parse(raw) as VerifiedUser) : undefined;
+}
+
+export async function holdContent(userId: string, content: HeldContent): Promise<boolean> {
+  const key = keys.heldUser(userId);
+  const existing = await redis.hGet(key, content.id);
+  if (
+    !canHoldContent({
+      alreadyHeld: Boolean(existing),
+      heldCount: await redis.hLen(key),
+      maximum: MAX_HELD_CONTENT_PER_USER,
+    })
+  ) {
+    return false;
+  }
+  await redis.hSet(key, { [content.id]: JSON.stringify(content) });
+  await redis.expire(key, HELD_CONTENT_TTL_SECONDS);
+  return true;
+}
+
+export async function getHeldContent(userId: string): Promise<HeldContent[]> {
+  const values = await redis.hGetAll(keys.heldUser(userId));
+  return Object.values(values).flatMap((value) => {
+    try {
+      return [JSON.parse(value) as HeldContent];
+    } catch {
+      return [];
+    }
+  });
+}
+
+export async function removeHeldContent(userId: string, contentIds: string[]): Promise<void> {
+  if (contentIds.length === 0) return;
+  await redis.hDel(keys.heldUser(userId), contentIds);
 }
 
 export async function completeRequest(
@@ -115,7 +152,11 @@ export async function claimNullifier(
 export async function unlinkUser(userId: string): Promise<VerifiedUser | undefined> {
   const verified = await getVerifiedUser(userId);
   const pending = await getPendingRequestForUser(userId);
-  const deleteKeys = [keys.verifiedUser(userId), keys.pendingUser(userId)];
+  const deleteKeys = [
+    keys.verifiedUser(userId),
+    keys.pendingUser(userId),
+    keys.heldUser(userId),
+  ];
   if (verified) {
     deleteKeys.push(keys.request(verified.requestId));
     deleteKeys.push(keys.nullifier(verified.action, verified.decimalNullifier));

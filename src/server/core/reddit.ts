@@ -1,6 +1,12 @@
 import { context, reddit, settings } from '@devvit/web/server';
 import type { MenuItemLocation } from '@devvit/web/shared';
-import { getPortalPostId, setPortalPostId } from './state.js';
+import { restoreHeldItems } from './gating.js';
+import {
+  getHeldContent,
+  getPortalPostId,
+  removeHeldContent,
+  setPortalPostId,
+} from './state.js';
 
 export type TargetAuthor = {
   userId: string;
@@ -42,14 +48,21 @@ export function portalUrl(postId: string): string {
   return `https://www.reddit.com/r/${context.subredditName}/comments/${postId.slice(3)}`;
 }
 
-export async function notifyUserOfRequest(username: string, postId: string): Promise<void> {
+export async function notifyUserOfRequest(
+  username: string,
+  postId: string,
+  heldContentType?: 'post' | 'comment'
+): Promise<void> {
   const requestMessage =
     (await settings.get<string>('requestMessage'))?.trim() ||
     'A moderator has requested a privacy-preserving human check.';
+  const gateNotice = heldContentType
+    ? `Your recent ${heldContentType} is temporarily hidden because this community requires a Human Check before posting or commenting. It will be restored automatically after a successful check.\n\n`
+    : '';
   await reddit.sendPrivateMessage({
     to: username,
     subject: `Human Check requested in r/${context.subredditName}`,
-    text: `${requestMessage}\n\n[Open the World Human Check portal](${portalUrl(postId)})`,
+    text: `${gateNotice}${requestMessage}\n\n[Open the World Human Check portal](${portalUrl(postId)})`,
   });
 }
 
@@ -62,4 +75,35 @@ export async function assignVerifiedFlair(username: string): Promise<void> {
     backgroundColor: '#2B6FF7',
     textColor: 'light',
   });
+}
+
+export async function isSubredditModerator(username: string): Promise<boolean> {
+  const moderators = await reddit
+    .getModerators({
+      subredditName: context.subredditName,
+      username,
+      limit: 1,
+      pageSize: 1,
+    })
+    .all();
+  return moderators.length > 0;
+}
+
+export async function restoreHeldContent(userId: string): Promise<void> {
+  const held = await getHeldContent(userId);
+  const result = await restoreHeldItems(
+    held,
+    async (content) => {
+      await reddit.approve(content.id as `t1_${string}` | `t3_${string}`);
+    },
+    async (content) => {
+      await removeHeldContent(userId, [content.id]);
+    }
+  );
+  if (result.failed > 0) {
+    console.error(`Could not restore ${result.failed} held submission(s) for a verified user`);
+  }
+  if (result.cleanupFailed > 0) {
+    console.error(`Could not clear ${result.cleanupFailed} restored submission(s) from temporary state`);
+  }
 }

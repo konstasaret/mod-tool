@@ -3,7 +3,7 @@ import { context } from '@devvit/web/server';
 import type { IdKitResponse } from '../../shared/contracts.js';
 import { getAppConfig } from '../core/config.js';
 import { deriveOpaqueSignal } from '../core/privacy.js';
-import { assignVerifiedFlair } from '../core/reddit.js';
+import { assignVerifiedFlair, restoreHeldContent } from '../core/reddit.js';
 import {
   claimNullifier,
   completeRequest,
@@ -43,8 +43,16 @@ external.post('/world/verification-completed', async (c) => {
     if (!(await claimNullifier(config.action, nullifier, request.id, request.redditUserId))) {
       throw new Error('This World credential already completed this community action');
     }
-    await assignVerifiedFlair(request.redditUsername);
     await completeRequest(request, config.action, nullifier);
+    const postProcessing = await Promise.allSettled([
+      assignVerifiedFlair(request.redditUsername),
+      restoreHeldContent(request.redditUserId),
+    ]);
+    for (const result of postProcessing) {
+      if (result.status === 'rejected') {
+        console.error('Verification completed, but post-processing failed', result.reason);
+      }
+    }
     return c.json({ ok: true });
   } catch (error) {
     console.error(`Verification completion failed for request ${requestId ?? 'unknown'}`, error);

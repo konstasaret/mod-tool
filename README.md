@@ -32,11 +32,18 @@ The process is user-initiated. A check does not begin until the Reddit user choo
 
 Moderators can also open the community's World Human Check portal from the subreddit menu.
 
+### Verified posting mode
+
+Communities can require a successful Human Check for posts, comments, or both. When this mode is enabled, an unverified submission is temporarily removed and the author receives a verification request.
+
+After the author completes the check, the app restores the held submission, applies verified flair, and allows future posts or comments normally.
+
 ### Community settings
 
 Moderators can:
 
 - enable or disable human checks,
+- require Human Check for posts or comments,
 - choose the verified flair text, and
 - customize the message sent with each request.
 

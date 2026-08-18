@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto';
 import { Hono } from 'hono';
 import { context } from '@devvit/web/server';
 import type { MenuItemRequest, UiResponse } from '@devvit/web/shared';
@@ -9,7 +8,9 @@ import {
   notifyUserOfRequest,
   portalUrl,
 } from '../core/reddit.js';
-import { getVerifiedUser, saveRequest } from '../core/state.js';
+import { humanCheckStatusMessage } from '../core/gating.js';
+import { ensureHumanCheckRequest } from '../core/requests.js';
+import { getPendingRequestForUser, getVerifiedUser } from '../core/state.js';
 
 export const menu = new Hono();
 
@@ -38,21 +39,14 @@ menu.post('/request-human-check', async (c) => {
       return c.json<UiResponse>({ showToast: 'This author is already Human Checked.' });
     }
 
-    const requestId = randomUUID();
-    await saveRequest({
-      id: requestId,
-      redditUserId: author.userId,
-      redditUsername: author.username,
-      sourceId: input.targetId,
-      status: 'pending',
-      level: 'selfie',
-      requestedAt: new Date().toISOString(),
-    });
+    const { created } = await ensureHumanCheckRequest(author, input.targetId);
     const portalPostId = await ensurePortalPost();
     await notifyUserOfRequest(author.username, portalPostId);
 
     return c.json<UiResponse>({
-      showToast: 'Human Check requested. The author received a private Reddit message.',
+      showToast: created
+        ? 'Human Check requested. The author received a private Reddit message.'
+        : 'Human Check is already pending. A reminder was sent to the author.',
     });
   } catch (error) {
     console.error('Human Check request failed', error);
@@ -67,11 +61,16 @@ menu.post('/view-status', async (c) => {
       return c.json<UiResponse>({ showToast: 'Choose a post or comment author.' }, 400);
     }
     const author = await getTargetAuthor(input.targetId, input.location);
-    const verified = await getVerifiedUser(author.userId);
+    const [verified, pending] = await Promise.all([
+      getVerifiedUser(author.userId),
+      getPendingRequestForUser(author.userId),
+    ]);
     return c.json<UiResponse>({
-      showToast: verified
-        ? `Human Checked on ${new Date(verified.verifiedAt).toLocaleDateString()}.`
-        : 'No completed Human Check exists for this author in this community.',
+      showToast: humanCheckStatusMessage({
+        verifiedAt: verified?.verifiedAt,
+        requestStatus: pending?.status,
+        requestedAt: pending?.requestedAt,
+      }),
     });
   } catch (error) {
     console.error('Human Check status lookup failed', error);
