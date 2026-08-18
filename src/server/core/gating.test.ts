@@ -32,7 +32,10 @@ test('gates only unverified, non-exempt submissions when enabled', () => {
 });
 
 test('reports verified, pending, failed, and missing status clearly', () => {
-  assert.match(humanCheckStatusMessage({ verifiedAt: '2026-08-18T00:00:00.000Z' }), /Human Checked/);
+  assert.match(
+    humanCheckStatusMessage({ verifiedAt: '2026-08-18T00:00:00.000Z' }),
+    /Proof of Human completed/
+  );
   assert.match(
     humanCheckStatusMessage({ requestStatus: 'pending', requestedAt: '2026-08-18T00:00:00.000Z' }),
     /pending/

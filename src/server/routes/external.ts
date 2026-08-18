@@ -38,6 +38,7 @@ external.post('/world/verification-completed', async (c) => {
       expectedAction: config.action,
       expectedSignal: signal,
       expectedEnvironment: config.environment,
+      expectedIdentifier: 'orb',
     });
     await verifyProofWithWorld({ rpId: config.rpId, proof: body.idkitResponse });
     if (!(await claimNullifier(config.action, nullifier, request.id, request.redditUserId))) {

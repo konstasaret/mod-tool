@@ -2,9 +2,9 @@
 
 > A simple, privacy-conscious human-check tool for Reddit moderators and their communities.
 
-World Human Check helps moderators ask the author of a post or comment to complete a World Selfie Check.
+World Human Check helps moderators ask the author of a post or comment to prove they are a unique, Orb-verified human with World ID.
 
-It gives moderators an additional liveness signal when reviewing suspicious activity, bots, spam, or other behavior that may need a human check.
+It gives moderators a privacy-preserving Proof of Human when reviewing suspicious activity, bots, spam, or other behavior that may need a human check.
 
 After a successful check, the app can add a verified flair to the Reddit user in that community.
 
@@ -14,7 +14,7 @@ After a successful check, the app can add a verified flair to the Reddit user in
 
 1. A moderator requests a human check on a post or comment.
 2. The author receives a private message explaining the request.
-3. The author chooses to start a World Selfie Check.
+3. The author chooses to prove they are Orb verified with World ID.
 4. The app records whether the check was completed.
 5. The moderator can view the result and the user can receive verified flair.
 
@@ -55,21 +55,19 @@ Each community manages its own settings and verification records.
 
 The Reddit user receives a clear private message explaining that a moderator requested a human check.
 
-The user opens the community verification portal, chooses whether to continue, and completes the World Selfie Check. When the check succeeds, the app updates their community verification status and can apply verified flair.
+The user opens the community verification portal, chooses whether to continue, and approves an Orb-backed Proof of Human request in World App. When the proof succeeds, the app updates their community verification status and can apply human flair.
 
 ---
 
 ## Privacy
 
 - Reddit usernames are not sent to World.
-- The app does not store selfies.
+- The app does not receive or store biometric data.
 - The app stores only the verification information needed for the community experience.
 - Users can unlink their verification and delete app-held verification data.
 
 ---
 
-## What Selfie Check means
+## What Proof of Human means
 
-World Selfie Check helps confirm that a live person completed the request. It adds useful bot friction without asking moderators to collect identity documents.
-
-Selfie Check is a liveness check. It does not prove that a person is globally unique or that they have only one Reddit account.
+World ID lets an Orb-verified person prove they are a unique human without revealing their identity to Reddit moderators or this app. The proof is bound to this community action, and the app uses its nullifier to prevent the same World credential from holding the badge on another Reddit account in the same app installation.

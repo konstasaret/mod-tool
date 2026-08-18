@@ -1,5 +1,5 @@
 export type VerificationStatus = 'none' | 'pending' | 'verified' | 'failed';
-export type VerificationLevel = 'selfie';
+export type VerificationLevel = 'orb';
 export type WorldEnvironment = 'production' | 'staging';
 
 export type RpContext = {
