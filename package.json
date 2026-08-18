@@ -9,15 +9,15 @@
     "build": "vite build && vite build --config vite.bridge.config.ts",
     "build:devvit": "vite build",
     "build:bridge": "vite build --config vite.bridge.config.ts",
-    "dev": "devvit playtest",
+    "dev": "node scripts/devvit-with-public-readme.mjs playtest",
     "bridge:dev": "tsx src/bridge/server.ts",
     "bridge:start": "tsx src/bridge/server.ts",
     "check": "npm run typecheck && npm run test",
     "typecheck": "tsc --build",
     "test": "node --import tsx --test \"src/**/*.test.ts\"",
     "login": "devvit login",
-    "upload": "npm run check && devvit upload",
-    "publish": "npm run check && devvit publish"
+    "upload": "npm run check && node scripts/devvit-with-public-readme.mjs upload",
+    "publish": "npm run check && node scripts/devvit-with-public-readme.mjs publish"
   },
   "engines": {
     "node": ">=24.0.0"
