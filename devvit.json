@@ -24,7 +24,7 @@
   "permissions": {
     "http": {
       "enable": true,
-      "domains": ["developer.world.org", "mod-tool.onrender.com"]
+      "domains": ["developer.world.org", "bridge.worldcoin.org", "mod-tool.onrender.com"]
     },
     "redis": true,
     "reddit": {
