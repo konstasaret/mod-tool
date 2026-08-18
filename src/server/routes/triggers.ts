@@ -1,4 +1,4 @@
-import { Hono } from 'hono';
+import { Hono, type Context } from 'hono';
 import { context, reddit, settings } from '@devvit/web/server';
 import type {
   OnCommentSubmitRequest,
@@ -9,6 +9,7 @@ import type {
 import { isEnabled } from '../core/config.js';
 import { shouldGateContent, type GatedContentType } from '../core/gating.js';
 import {
+  ensureHumanBadgeFlairTemplate,
   ensurePortalPost,
   isSubredditModerator,
   notifyUserOfRequest,
@@ -84,21 +85,35 @@ async function gateSubmission(input: {
   }
 }
 
-triggers.post('/on-app-install', async (c) => {
+async function configureInstallation(): Promise<{ postId: string; flairReady: boolean }> {
+  const postId = await ensurePortalPost();
   try {
-    const postId = await ensurePortalPost();
+    await ensureHumanBadgeFlairTemplate();
+    return { postId, flairReady: true };
+  } catch (error) {
+    console.error('Human badge flair template setup failed', error);
+    return { postId, flairReady: false };
+  }
+}
+
+async function handleInstallation(c: Context) {
+  try {
+    const { postId, flairReady } = await configureInstallation();
     return c.json<TriggerResponse>({
       status: 'success',
-      message: `Orb Human Badge portal created (${postId}).`,
+      message: `Orb Human Badge portal ready (${postId}); flair template ${flairReady ? 'ready' : 'will be retried on first verification'}.`,
     });
   } catch (error) {
-    console.error('App install portal creation failed', error);
+    console.error('App installation configuration failed', error);
     return c.json<TriggerResponse>(
       { status: 'error', message: 'Installed, but the verification portal could not be created.' },
       500
     );
   }
-});
+}
+
+triggers.post('/on-app-install', handleInstallation);
+triggers.post('/on-app-upgrade', handleInstallation);
 
 triggers.post('/on-post-submit', async (c) => {
   try {

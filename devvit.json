@@ -98,7 +98,8 @@
       "humanBadgeFlairText": {
         "type": "string",
         "label": "Orb-verified human badge flair",
-        "defaultValue": "🌐 human"
+        "helpText": "Uses the unique_human custom emoji uploaded to the subreddit.",
+        "defaultValue": ":unique_human: human"
       }
     }
   },
@@ -114,7 +115,8 @@
     ]
   },
   "triggers": {
-    "onAppInstall": "/internal/triggers/on-app-install"
+    "onAppInstall": "/internal/triggers/on-app-install",
+    "onAppUpgrade": "/internal/triggers/on-app-upgrade"
   },
   "scripts": {
     "dev": "vite build --watch",

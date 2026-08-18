@@ -8,7 +8,7 @@ import type {
 } from '../../shared/contracts.js';
 import { getAppConfig, isConfigured, isEnabled, type AppConfig } from '../core/config.js';
 import { deriveOpaqueSignal } from '../core/privacy.js';
-import { assignVerifiedFlair } from '../core/reddit.js';
+import { assignVerifiedFlair, getHumanBadgeFlairText } from '../core/reddit.js';
 import { ensureHumanBadgeRequest } from '../core/requests.js';
 import {
   getHumanBadgeUser,
@@ -222,8 +222,7 @@ api.post('/human-badge/unlink', async (c) => {
     if (verifiedHumanCheck) {
       await assignVerifiedFlair(verifiedHumanBadge.redditUsername);
     } else {
-      const humanBadgeFlairText =
-        (await settings.get<string>('humanBadgeFlairText'))?.trim() || '🌐 human';
+      const humanBadgeFlairText = await getHumanBadgeFlairText();
       const user = await reddit.getUserById(context.userId);
       const flair = await user?.getUserFlairBySubreddit(context.subredditName);
       if (flair?.flairText === humanBadgeFlairText) {

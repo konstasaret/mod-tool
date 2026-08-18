@@ -77,14 +77,35 @@ export async function assignVerifiedFlair(username: string): Promise<void> {
   });
 }
 
+export async function getHumanBadgeFlairText(): Promise<string> {
+  return (await settings.get<string>('humanBadgeFlairText'))?.trim() || ':unique_human: human';
+}
+
+export async function ensureHumanBadgeFlairTemplate(): Promise<string> {
+  const text = await getHumanBadgeFlairText();
+  const templates = await reddit.getUserFlairTemplates(context.subredditName);
+  const existing = templates.find((template) => template.text === text);
+  if (existing) return existing.id;
+
+  const created = await reddit.createUserFlairTemplate({
+    subredditName: context.subredditName,
+    text,
+    allowableContent: 'all',
+    maxEmojis: 1,
+    modOnly: true,
+    allowUserEdits: false,
+    backgroundColor: 'transparent',
+    textColor: 'dark',
+  });
+  return created.id;
+}
+
 export async function assignHumanBadgeFlair(username: string): Promise<void> {
-  const flairText = (await settings.get<string>('humanBadgeFlairText'))?.trim() || '🌐 human';
+  const flairTemplateId = await ensureHumanBadgeFlairTemplate();
   await reddit.setUserFlair({
     subredditName: context.subredditName,
     username,
-    text: flairText,
-    backgroundColor: '#000000',
-    textColor: 'light',
+    flairTemplateId,
   });
 }
 
