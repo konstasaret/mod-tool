@@ -115,12 +115,6 @@ async function handleInstallation(c: Context) {
 }
 
 triggers.post('/on-app-install', handleInstallation);
-triggers.post('/on-app-upgrade', (c) =>
-  c.json<TriggerResponse>({
-    status: 'success',
-    message: 'App upgraded; open the Orb Human Badge portal from the moderator menu to refresh it.',
-  })
-);
 
 triggers.post('/on-post-submit', async (c) => {
   try {
