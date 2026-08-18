@@ -1,0 +1,51 @@
+src/server/routes/api.ts
+  s_67e70ea6c3a04f::t_83e1eb980a716e 51,130
+src/server/core/world.ts
+  s_67e70ea6c3a04f::t_83e1eb980a716e 29,37-39
+devvit.json
+  s_67e70ea6c3a04f::t_17c65267e21e74 49-50
+  s_67e70ea6c3a04f::t_83e1eb980a716e 101,133
+  s_67e70ea6c3a04f::t_bc7dd24e5b155c 27
+src/bridge/client/main.tsx
+  s_67e70ea6c3a04f::t_83e1eb980a716e 3,34,38,44,60,73
+src/server/core/world.test.ts
+  s_67e70ea6c3a04f::t_88ff36ca385c70 10,13,20,33-44,46-48
+  s_67e70ea6c3a04f::t_17c65267e21e74 45
+src/server/core/gating.test.ts
+  s_67e70ea6c3a04f::t_88ff36ca385c70 35-38
+src/client/main.tsx
+  s_67e70ea6c3a04f::t_83e1eb980a716e 72,80,82
+README.md
+  s_67e70ea6c3a04f::t_bc7dd24e5b155c 5,238
+  s_67e70ea6c3a04f::t_e814283faaebf1 3,15,28,60,80,95,124,149,264,276
+src/server/core/state.ts
+  s_67e70ea6c3a04f::t_bb59be3c8200eb 8,32-33,35-38,40
+src/server/core/gating.ts
+  s_67e70ea6c3a04f::t_83e1eb980a716e 58
+REDDIT_README.md
+  s_67e70ea6c3a04f::t_e814283faaebf1 5,7,17,58,65,71,73
+src/server/routes/external.ts
+  s_67e70ea6c3a04f::t_83e1eb980a716e 41
+src/shared/contracts.ts
+  s_67e70ea6c3a04f::t_83e1eb980a716e 2
+src/server/core/requests.ts
+  s_67e70ea6c3a04f::t_83e1eb980a716e 18
+src/server/core/reddit.ts
+  s_67e70ea6c3a04f::t_83e1eb980a716e 70
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "62f0b45965c3243477bbf259a07b9272078cd135",
+  "prompts": {},
+  "sessions": {
+    "s_67e70ea6c3a04f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0165e-29b1-73f3-b453-f87c60d055d7",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "mustafakuloglu <mustafakuloglunun@gmail.com>"
+    }
+  }
+}
