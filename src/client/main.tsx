@@ -69,7 +69,7 @@ function App() {
         <p className="eyebrow">COMMUNITY HUMAN CHECK</p>
         <h1>Verify you’re human</h1>
         <p className="lede">
-          This community uses World ID to verify that each badge holder is a unique human.
+          This community uses a privacy-preserving World Selfie Check to add friction for bots.
         </p>
 
         <div className={`status status-${state?.status ?? 'loading'}`}>
@@ -77,9 +77,9 @@ function App() {
             {loading && !state
               ? 'Loading…'
               : state?.status === 'verified'
-                ? '✓ human'
+                ? '✓ Human Checked'
                 : state?.status === 'pending'
-                  ? 'Proof of Human requested'
+                  ? 'Selfie Check requested'
                   : 'No active request'}
           </strong>
           <span>{state?.message}</span>

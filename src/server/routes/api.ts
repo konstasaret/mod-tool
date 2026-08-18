@@ -48,7 +48,7 @@ api.get('/init', async (c) => {
       message:
         pending.status === 'failed'
           ? 'The last verification did not complete. Ask a moderator to issue a new request.'
-          : 'A moderator requested an Orb-backed Proof of Human for your account in this community.',
+          : 'A moderator requested a Selfie Check for your account in this community.',
     });
   }
   return c.json<PortalState>({
@@ -127,7 +127,7 @@ api.post('/unlink', async (c) => {
   if (!context.userId) return c.json({ ok: false, error: 'Sign in to Reddit first.' }, 401);
   const verified = await unlinkUser(context.userId);
   if (verified) {
-    const flairText = (await settings.get<string>('flairText'))?.trim() || '🌐 human';
+    const flairText = (await settings.get<string>('flairText'))?.trim() || '🌐 Human Checked';
     const user = await reddit.getUserById(context.userId);
     const flair = await user?.getUserFlairBySubreddit(context.subredditName);
     if (flair?.flairText === flairText) {

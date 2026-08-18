@@ -24,7 +24,7 @@
   "permissions": {
     "http": {
       "enable": true,
-      "domains": ["developer.world.org", "mod-tool.onrender.com"]
+      "domains": ["developer.world.org"]
     },
     "redis": true,
     "reddit": {
@@ -46,8 +46,7 @@
       },
       "worldAction": {
         "type": "string",
-        "label": "World action",
-        "helpText": "Existing World action used for the Orb-backed Proof of Human request.",
+        "label": "Selfie Check action",
         "defaultValue": "reddit-human-selfie-v1"
       },
       "worldEnvironment": {
@@ -98,7 +97,7 @@
       "flairText": {
         "type": "string",
         "label": "Verified user flair",
-        "defaultValue": "🌐 human"
+        "defaultValue": "🌐 Human Checked"
       },
       "requestMessage": {
         "type": "paragraph",
@@ -130,7 +129,7 @@
       },
       {
         "label": "Request Human Check",
-        "description": "Request an Orb-backed Proof of Human from this post or comment author.",
+        "description": "Request a Selfie Check from this post or comment author.",
         "location": ["post", "comment"],
         "forUserType": "moderator",
         "endpoint": "/internal/menu/request-human-check"

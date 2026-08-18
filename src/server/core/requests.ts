@@ -15,7 +15,7 @@ export async function ensureHumanCheckRequest(
     redditUsername: author.username,
     sourceId,
     status: 'pending',
-    level: 'orb',
+    level: 'selfie',
     requestedAt: new Date().toISOString(),
   };
   await saveRequest(request);

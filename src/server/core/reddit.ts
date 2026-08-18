@@ -67,7 +67,7 @@ export async function notifyUserOfRequest(
 }
 
 export async function assignVerifiedFlair(username: string): Promise<void> {
-  const flairText = (await settings.get<string>('flairText'))?.trim() || '🌐 human';
+  const flairText = (await settings.get<string>('flairText'))?.trim() || '🌐 Human Checked';
   await reddit.setUserFlair({
     subredditName: context.subredditName,
     username,

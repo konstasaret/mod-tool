@@ -5,7 +5,6 @@ import { canHoldContent, type HeldContent } from './gating.js';
 const REQUEST_TTL_MS = 24 * 60 * 60 * 1000;
 const HELD_CONTENT_TTL_SECONDS = 24 * 60 * 60;
 const MAX_HELD_CONTENT_PER_USER = 5;
-const VERIFICATION_STATE_PREFIX = 'whc:v2';
 
 export type VerificationRequest = {
   id: string;
@@ -29,15 +28,13 @@ export type VerifiedUser = {
 };
 
 const keys = {
-  // Keep the existing portal post while isolating Orb badge state from the
-  // earlier Selfie Check proof records.
   portalPost: 'whc:v1:portal-post',
-  request: (id: string) => `${VERIFICATION_STATE_PREFIX}:request:${id}`,
-  pendingUser: (userId: string) => `${VERIFICATION_STATE_PREFIX}:user:${userId}:pending`,
-  verifiedUser: (userId: string) => `${VERIFICATION_STATE_PREFIX}:user:${userId}:verified`,
-  heldUser: (userId: string) => `${VERIFICATION_STATE_PREFIX}:user:${userId}:held`,
+  request: (id: string) => `whc:v1:request:${id}`,
+  pendingUser: (userId: string) => `whc:v1:user:${userId}:pending`,
+  verifiedUser: (userId: string) => `whc:v1:user:${userId}:verified`,
+  heldUser: (userId: string) => `whc:v1:user:${userId}:held`,
   nullifier: (action: string, decimalNullifier: string) =>
-    `${VERIFICATION_STATE_PREFIX}:nullifier:${action}:${decimalNullifier}`,
+    `whc:v1:nullifier:${action}:${decimalNullifier}`,
 };
 
 export async function saveRequest(request: VerificationRequest): Promise<void> {

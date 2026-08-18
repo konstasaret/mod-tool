@@ -1,6 +1,6 @@
 import { StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { IDKit, orbLegacy } from '@worldcoin/idkit-core';
+import { IDKit, selfieCheckLegacy } from '@worldcoin/idkit-core';
 import type { BridgePublicSession, IdKitResponse } from '../../shared/contracts.js';
 import './styles.css';
 
@@ -31,17 +31,17 @@ function App() {
   const verify = async () => {
     if (!session) return;
     setPhase('waiting');
-    setMessage('Waiting for World Proof of Human…');
+    setMessage('Waiting for World Selfie Check…');
     const worldWindow = window.open('', '_blank');
     if (worldWindow) worldWindow.opener = null;
     try {
-      const request = await IDKit.request({
+      const request = await IDKit.requestWithInviteCode({
         app_id: session.appId as `app_${string}`,
         action: session.action,
         rp_context: session.rpContext,
         allow_legacy_proofs: true,
         environment: session.environment,
-      }).preset(orbLegacy({ signal: session.signal }));
+      }).preset(selfieCheckLegacy({ signal: session.signal }));
 
       if (request.connectorURI) {
         if (!worldWindow) throw new Error('Allow pop-ups, then try again.');
@@ -57,7 +57,7 @@ function App() {
       });
       if (!response.ok) throw new Error('The proof returned, but Reddit did not accept it.');
       setPhase('success');
-      setMessage('Proof of Human complete. Return to Reddit and refresh your status.');
+      setMessage('Human Check complete. Return to Reddit and refresh your status.');
     } catch (error) {
       worldWindow?.close();
       setPhase('error');
@@ -70,7 +70,7 @@ function App() {
       <section className="panel">
         <div className="globe">🌐</div>
         <p className="eyebrow">WORLD HUMAN CHECK</p>
-        <h1>{phase === 'success' ? 'You’re verified as human' : 'Verify with World ID'}</h1>
+        <h1>{phase === 'success' ? 'You’re Human Checked' : 'Complete Selfie Check'}</h1>
         <p className={`message ${phase}`}>{message}</p>
         {phase === 'ready' && <button onClick={() => void verify()}>Continue with World</button>}
         {phase === 'waiting' && <div className="spinner" aria-label="Waiting" />}

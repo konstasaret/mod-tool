@@ -1,8 +1,8 @@
 # World Human Check — Developer Guide
 
-World Human Check is a Reddit Devvit moderation app that lets a subreddit request an Orb-backed World Proof of Human, assign a human flair after success, and optionally require verification before posts or comments remain visible.
+World Human Check is a Reddit Devvit moderation app that lets a subreddit request a privacy-preserving World Selfie Check, assign community flair after success, and optionally require verification before posts or comments remain visible.
 
-This README is the developer handoff: what exists, how it works, how to run it, and what is still unfinished. It intentionally contains no signing keys, API tokens, community names, or private deployment configuration.
+This README is the developer handoff: what exists, how it works, how to run it, and what is still unfinished. It intentionally contains no real app IDs, relying-party IDs, signing keys, API tokens, community names, or deployment URLs.
 
 > **Important:** Devvit normally uploads the root `README.md` as the Reddit app description. Use the protected npm commands in this repository. They substitute `REDDIT_README.md` during Devvit commands and restore this developer guide afterward.
 
@@ -12,7 +12,7 @@ V1 is implemented and installed as a private playtest build.
 
 - Moderator menu actions request a Human Check and show its status.
 - A Reddit custom post gives users their verification entry point.
-- Orb-backed Proof of Human runs through a separately hosted bridge.
+- World Selfie Check runs through a separately hosted bridge.
 - Successful checks persist per-install verification state and apply Reddit flair.
 - Optional post and comment gates hold unverified submissions and restore them after success.
 
@@ -25,7 +25,7 @@ The automated gates default to **off**. Joining the subreddit is not restricted.
 1. A moderator opens the menu on a post or comment.
 2. **Request Human Check** creates or reuses a pending request.
 3. The author receives a private Reddit message with the portal link.
-4. The author proves they are Orb verified from the portal.
+4. The author completes Selfie Check from the portal.
 5. **View Human Check status** reports missing, pending, failed, or verified.
 
 ### Verified posting mode
@@ -57,7 +57,7 @@ Reddit verification portal
   Devvit creates signed RP context
             |
             v
-   HTTPS verification bridge ------> World App / Proof of Human
+   HTTPS verification bridge ------> World App / Selfie Check
             |                              |
             |<--------- proof -------------|
             v
@@ -77,7 +77,7 @@ Reddit verification portal
 | Devvit client | Displays the community portal, current status, start button, and unlink control. |
 | Devvit server | Owns Reddit identity, settings, RP signing, proof validation, Redis state, Reddit actions, and World API verification. |
 | Verification bridge | Hosts IDKit, creates short-lived browser sessions, launches the World handoff, and returns the proof to Devvit. |
-| World | Produces an Orb-backed Proof of Human without disclosing the user's identity. |
+| World | Performs Selfie Check and produces the proof. |
 | Reddit | Hosts the app and per-install Redis, sends private messages, moderates submissions, and stores flair. |
 
 ## Privacy and trust boundaries
@@ -92,7 +92,7 @@ Security controls already implemented:
 - Credential-free HTTPS bridge URL validation.
 - Constant-time bridge API-token comparison.
 - Devvit callback hostname, path, and token-shape validation.
-- Proof credential (`orb`), action, environment, signal hash, World API result, and nullifier checks.
+- Proof action, environment, signal hash, World API result, and nullifier checks.
 
 Never commit real credentials or deployment identifiers. Treat any signing key or API token pasted into chat, an issue, a log, or source control as compromised and rotate it.
 
@@ -121,7 +121,7 @@ The repository contains setting names only. Store actual values in Devvit settin
 | --- | --- | --- |
 | `worldAppId` | No | World application identifier. |
 | `worldRpId` | No | World relying-party identifier. |
-| `worldAction` | No | World action used for Proof of Human; the POC reuses `reddit-human-selfie-v1`. |
+| `worldAction` | No | Selfie Check action; defaults to `reddit-human-selfie-v1`. |
 | `worldEnvironment` | No | `production` or `staging`. |
 | `worldRpSigningKey` | Yes | Server-only World RP signing key. |
 | `signalHmacSecret` | Yes | Random value of at least 32 characters for opaque signals. |
@@ -146,7 +146,7 @@ npx devvit settings set worldBridgeApiToken
 | Setting | Default | Effect |
 | --- | --- | --- |
 | Enable World Human Check | On | Master switch for requests and verification. |
-| Verified user flair | `🌐 human` | Flair applied after successful Orb verification. |
+| Verified user flair | `🌐 Unique Human` | Flair applied after successful verification. |
 | Verification request message | Included | Community-specific private-message text. |
 | Require Human Check for posts | Off | Holds posts from unverified users. |
 | Require Human Check for comments | Off | Holds comments from unverified users. |
@@ -235,7 +235,7 @@ Install a private version using the Devvit CLI after upload:
 npx devvit install <subreddit> <app-slug>@<version>
 ```
 
-The POC bridge hostname is included in `permissions.http.domains`. Keep all automated post/comment gates off until the complete verification round trip works in the playtest community.
+Before upload, temporarily add the approved bridge hostname to `permissions.http.domains`. Keep all automated post/comment gates off until the complete verification round trip works in the playtest community.
 
 ## Redis model and lifecycle
 
@@ -261,7 +261,7 @@ Unlink removes verified state, matching request, held state, nullifier claim, an
 
 ## Known limitations and review blockers
 
-1. The POC reuses the legacy `reddit-human-selfie-v1` action identifier while requiring an `orb` credential in code.
+1. Selfie Check proves liveness, not global uniqueness or one-person-one-account. Orb/Proof of Human is the planned higher-assurance level.
 2. Devvit submit triggers run after submission; the app removes content quickly but cannot block the Reddit composer before submission.
 3. Bridge sessions are in memory, with no shared persistence, rate limiter, operational dashboard, or retry queue.
 4. Post-verification flair/restoration has no automatic retry if Reddit is temporarily unavailable.
@@ -273,7 +273,7 @@ Unlink removes verified state, matching request, held state, nullifier claim, an
 2. Add durable bridge-session storage, rate limiting, structured redacted logs, health checks, and retryable post-processing.
 3. Add explicit retention cleanup and deletion controls for pending/failed requests.
 4. Obtain Reddit's written approval and HTTP/external-endpoint allowlisting before public enforcement.
-5. Create a clearly named production Proof of Human action when the team owner/admin is available.
+5. Add Orb/Proof of Human as a separate verification level without changing the Selfie Check flow.
 
 ## Safe contribution checklist
 
