@@ -1,6 +1,6 @@
 {
   "$schema": "https://developers.reddit.com/schema/config-file.v1.json",
-  "name": "world-human-check",
+  "name": "world-app",
   "post": {
     "dir": "dist/client",
     "entrypoints": {
@@ -37,12 +37,14 @@
       "worldAppId": {
         "type": "string",
         "label": "World app ID",
-        "helpText": "Public app_id from the World Developer Portal."
+        "helpText": "Public app_id from the World Developer Portal.",
+        "defaultValue": "app_8ce3b1f93924b643d6ff8225fffdbbf5"
       },
       "worldRpId": {
         "type": "string",
         "label": "World relying-party ID",
-        "helpText": "Public rp_id from the World Developer Portal."
+        "helpText": "Public rp_id from the World Developer Portal.",
+        "defaultValue": "rp_a3400196197df1cd"
       },
       "worldAction": {
         "type": "string",
@@ -53,8 +55,14 @@
         "type": "select",
         "label": "World environment",
         "options": [
-          { "label": "Production", "value": "production" },
-          { "label": "Staging", "value": "staging" }
+          {
+            "label": "Production",
+            "value": "production"
+          },
+          {
+            "label": "Staging",
+            "value": "staging"
+          }
         ],
         "defaultValue": "production"
       },
@@ -127,6 +135,9 @@
   },
   "triggers": {
     "onAppInstall": "/internal/triggers/on-app-install"
+  },
+  "dev": {
+    "subreddit": "Onlyhumanshere"
   },
   "scripts": {
     "dev": "vite build --watch",

@@ -2,6 +2,8 @@
 
 Minimal Reddit Devvit moderation tool for requesting a privacy-preserving World **Selfie Check**, recording the result per subreddit installation, and assigning verified user flair.
 
+Current playtest target: Devvit app slug `world-app`, World app `app_8ce3b1f93924b643d6ff8225fffdbbf5`, RP `rp_a3400196197df1cd`, and `r/Onlyhumanshere`. These values are public configuration; no signing key is committed.
+
 This repository contains two deployable pieces:
 
 1. `Devvit app` — moderation actions, portal post, Reddit-only user mapping, Redis state, World proof verification, replay protection, and flair.
@@ -44,7 +46,7 @@ Reddit usernames and raw Reddit user IDs are never sent to the bridge or World. 
 
 - A Reddit account connected at [Reddit for Developers](https://developers.reddit.com/).
 - Moderator access to a private test subreddit.
-- A Devvit app registration using the exact slug `world-human-check` (or update `devvit.json` if the slug is unavailable).
+- The existing Devvit app registration with slug `world-app`.
 - Limited-access approval for **External Endpoints**.
 - HTTP Fetch approval for `developer.world.org` and the bridge's exact hostname.
 - Written Reddit approval for the Reddit → external World verification → Reddit handoff before public launch.
@@ -77,8 +79,8 @@ The following are Devvit **global developer settings**, not per-subreddit modera
 
 | Setting | Secret | Source |
 |---|---:|---|
-| `worldAppId` | No | World Developer Portal `app_id` |
-| `worldRpId` | No | World Developer Portal `rp_id` |
+| `worldAppId` | No | World Developer Portal `app_id` (public default configured) |
+| `worldRpId` | No | World Developer Portal `rp_id` (public default configured) |
 | `worldAction` | No | Dedicated action name |
 | `worldEnvironment` | No | `staging` or `production` |
 | `worldRpSigningKey` | **Yes** | World RP signing key |
@@ -96,8 +98,6 @@ openssl rand -hex 32  # worldBridgeApiToken / BRIDGE_API_TOKEN
 After the app is installed once, set values interactively so secrets do not enter shell history:
 
 ```bash
-npx devvit settings set worldAppId
-npx devvit settings set worldRpId
 npx devvit settings set worldRpSigningKey
 npx devvit settings set signalHmacSecret
 npx devvit settings set worldBridgeBaseUrl
@@ -133,7 +133,7 @@ npm run login
 npm run dev
 ```
 
-The Devvit CLI will ask for the test subreddit. The real end-to-end World flow cannot run until the bridge is on an approved HTTPS origin and Reddit enables External Endpoints for this app.
+The default playtest subreddit is `r/Onlyhumanshere`. The real end-to-end World flow cannot run until the bridge is on an approved HTTPS origin and Reddit enables External Endpoints for this app.
 
 ## Fetch Domains
 
