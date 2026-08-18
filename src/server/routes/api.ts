@@ -73,6 +73,7 @@ api.get('/init', async (c) => {
   const userId = context.userId;
   if (!userId) {
     return c.json<PortalState>({
+      signedIn: false,
       enabled,
       setupComplete,
       status: 'none',
@@ -99,6 +100,7 @@ api.get('/init', async (c) => {
       : { humanBadgeStatus: 'none' as const };
   if (verified) {
     return c.json<PortalState>({
+      signedIn: true,
       enabled,
       setupComplete,
       status: 'verified',
@@ -110,6 +112,7 @@ api.get('/init', async (c) => {
   }
   if (pending) {
     return c.json<PortalState>({
+      signedIn: true,
       enabled,
       setupComplete,
       status: pending.status,
@@ -123,6 +126,7 @@ api.get('/init', async (c) => {
     });
   }
   return c.json<PortalState>({
+    signedIn: true,
     enabled,
     setupComplete,
     status: 'none',

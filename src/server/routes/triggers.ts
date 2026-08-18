@@ -89,7 +89,7 @@ triggers.post('/on-app-install', async (c) => {
     const postId = await ensurePortalPost();
     return c.json<TriggerResponse>({
       status: 'success',
-      message: `World Human Check portal created (${postId}).`,
+      message: `Orb Human Badge portal created (${postId}).`,
     });
   } catch (error) {
     console.error('App install portal creation failed', error);

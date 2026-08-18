@@ -11,6 +11,7 @@ export type RpContext = {
 };
 
 export type PortalState = {
+  signedIn: boolean;
   enabled: boolean;
   setupComplete: boolean;
   status: VerificationStatus;

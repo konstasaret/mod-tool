@@ -23,12 +23,14 @@ async function requiredSetting(name: string): Promise<string> {
 export async function getAppConfig(): Promise<AppConfig> {
   const environment =
     (await settings.get<WorldEnvironment>('worldEnvironment')) ?? 'production';
-  const action = (await settings.get<string>('worldAction'))?.trim() || 'reddit-human-selfie-v1';
+  const humanBadgeAction =
+    (await settings.get<string>('worldHumanBadgeAction'))?.trim() || 'reddit-human-selfie-v1';
+  const action = (await settings.get<string>('worldAction'))?.trim() || humanBadgeAction;
   const config: AppConfig = {
     appId: await requiredSetting('worldAppId'),
     rpId: await requiredSetting('worldRpId'),
     action,
-    humanBadgeAction: (await settings.get<string>('worldHumanBadgeAction'))?.trim() || action,
+    humanBadgeAction,
     environment,
     signingKey: await requiredSetting('worldRpSigningKey'),
     signalSecret: await requiredSetting('signalHmacSecret'),

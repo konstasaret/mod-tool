@@ -34,10 +34,10 @@ export async function ensurePortalPost(): Promise<string> {
   if (existing) return existing;
   const post = await reddit.submitCustomPost({
     subredditName: context.subredditName,
-    title: 'World Human Check',
+    title: 'Orb Human Badge',
     entry: 'default',
     textFallback: {
-      text: 'Open this post in the current Reddit app to complete a community human check.',
+      text: 'Open this post in the current Reddit app to prove an Orb credential and receive a community human badge.',
     },
   });
   await setPortalPostId(post.id);
