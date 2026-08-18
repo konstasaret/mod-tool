@@ -8,6 +8,8 @@
 
 After a successful check, the app records the result for that community and can give the Reddit user a verified flair.
 
+This is a community moderation product designed for subreddit moderators and Reddit users—not an internal administration tool.
+
 **Current status:** V1 is ready for private-community playtesting. Public release is waiting for Reddit review of the external verification flow.
 
 ---
@@ -160,8 +162,8 @@ This repository contains two components:
 
 Review resources:
 
-- [Reddit review checklist](docs/REDDIT_REVIEW_CHECKLIST.md)
-- [Privacy data map](docs/PRIVACY_DATA_MAP.md)
+- [Reddit review checklist](https://github.com/konstasaret/mod-tool/blob/main/docs/REDDIT_REVIEW_CHECKLIST.md)
+- [Privacy data map](https://github.com/konstasaret/mod-tool/blob/main/docs/PRIVACY_DATA_MAP.md)
 
 Useful local checks:
 
