@@ -9,8 +9,8 @@ h1 { margin: 0 0 16px; font-size: clamp(34px, 8vw, 48px); font-weight: 600; lett
 .message { color: #5f5d56; line-height: 1.5; }
 .message.success { color: #0b0b0a; font-weight: 650; }
 .message.error { color: #7a2119; }
-button { width: 100%; margin-top: 18px; padding: 14px 18px; border: 1px solid #0b0b0a; border-radius: 999px; background: #0b0b0a; color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
-button:hover { background: #30302d; }
+.qr-frame { width: fit-content; margin: 22px auto 0; padding: 12px; border: 1px solid #dedcd4; border-radius: 16px; background: #fff; }
+.qr-frame img { display: block; width: min(256px, 62vw); height: auto; }
 .privacy { margin-top: 28px; padding-top: 20px; border-top: 1px solid #dedcd4; color: #66635c; font-size: 13px; line-height: 1.5; }
 .privacy strong { color: #0b0b0a; }
 .spinner { width: 32px; height: 32px; margin: 24px auto 0; border: 3px solid #d7d5cd; border-top-color: #0b0b0a; border-radius: 50%; animation: spin .9s linear infinite; }
@@ -27,8 +27,7 @@ button:hover { background: #30302d; }
   .panel { border-color: #353531; background: #171716; }
   .eyebrow, .message, .privacy { color: #aaa79e; }
   .message.success, .privacy strong { color: #f6f5ef; }
-  button { border-color: #f6f5ef; background: #f6f5ef; color: #0b0b0a; }
-  button:hover { background: #d9d7cf; }
+  .qr-frame { border-color: #353531; }
   .privacy { border-color: #353531; }
   .spinner { border-color: #3b3a36; border-top-color: #f6f5ef; }
 }
