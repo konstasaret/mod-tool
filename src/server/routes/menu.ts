@@ -10,7 +10,7 @@ import {
 } from '../core/reddit.js';
 import { humanCheckStatusMessage } from '../core/gating.js';
 import { ensureHumanCheckRequest } from '../core/requests.js';
-import { getPendingRequestForUser, getVerifiedUser } from '../core/state.js';
+import { getPendingRequestForUser, getVerifiedUser, unlinkUser } from '../core/state.js';
 
 export const menu = new Hono();
 
@@ -75,5 +75,23 @@ menu.post('/view-status', async (c) => {
   } catch (error) {
     console.error('Human Check status lookup failed', error);
     return c.json<UiResponse>({ showToast: 'Could not load Human Check status.' }, 500);
+  }
+});
+
+menu.post('/reset-my-verification', async (c) => {
+  try {
+    if (!context.userId) {
+      return c.json<UiResponse>({ showToast: 'Sign in to Reddit first.' }, 401);
+    }
+    const removed = Boolean(await unlinkUser(context.userId));
+    console.log('Moderator verification reset', { removed });
+    return c.json<UiResponse>({
+      showToast: removed
+        ? 'Your verification was reset. Your next post will require verification.'
+        : 'No verification was stored for this Reddit account.',
+    });
+  } catch (error) {
+    console.error('Moderator verification reset failed', error);
+    return c.json<UiResponse>({ showToast: 'Verification could not be reset.' }, 500);
   }
 });

@@ -94,6 +94,13 @@
         "endpoint": "/internal/menu/open-portal"
       },
       {
+        "label": "Reset my World verification",
+        "description": "Clear your test verification so your next post is held again.",
+        "location": "subreddit",
+        "forUserType": "moderator",
+        "endpoint": "/internal/menu/reset-my-verification"
+      },
+      {
         "label": "Request Human Check",
         "description": "Request World verification from this post or comment author.",
         "location": ["post", "comment"],

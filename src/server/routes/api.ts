@@ -267,6 +267,7 @@ api.post('/verification/complete', async (c) => {
 
 api.post('/unlink', async (c) => {
   if (!context.userId) return c.json({ ok: false, error: 'Sign in to Reddit first.' }, 401);
-  await unlinkUser(context.userId);
-  return c.json({ ok: true });
+  const removed = Boolean(await unlinkUser(context.userId));
+  console.log('Portal verification reset', { removed });
+  return c.json({ ok: true, removed });
 });

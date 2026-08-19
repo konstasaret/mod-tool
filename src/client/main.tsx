@@ -167,10 +167,14 @@ function App() {
     setError(undefined);
     try {
       const response = await fetch('/api/unlink', { method: 'POST' });
-      if (!response.ok) throw new Error('Human Check data could not be removed.');
+      const result = (await response.json()) as { ok?: boolean; removed?: boolean; error?: string };
+      if (!response.ok || !result.ok) {
+        throw new Error(result.error || 'Verification could not be reset.');
+      }
+      if (!result.removed) throw new Error('No verification was stored for this Reddit account.');
       await refresh();
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'Human Check data could not be removed.');
+      setError(caught instanceof Error ? caught.message : 'Verification could not be reset.');
       setLoading(false);
     }
   };
