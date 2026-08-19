@@ -63,29 +63,8 @@ function validSession(input: Omit<BridgeSessionInput, 'callbackUrl'>): boolean {
   );
 }
 
-function allowedBrowserOrigin(origin: string): string {
-  try {
-    const url = new URL(origin);
-    if (
-      url.protocol === 'https:' &&
-      (url.hostname.endsWith('.devvit.net') || url.hostname === 'developers.reddit.com')
-    ) {
-      return origin;
-    }
-    if (
-      url.protocol === 'http:' &&
-      (url.hostname === 'localhost' || url.hostname === '127.0.0.1')
-    ) {
-      return origin;
-    }
-  } catch {
-    // The CORS middleware will omit access for malformed origins.
-  }
-  return '';
-}
-
 const browserSessionCors = cors({
-  origin: allowedBrowserOrigin,
+  origin: '*',
   allowHeaders: ['Content-Type'],
   allowMethods: ['GET', 'POST', 'OPTIONS'],
   maxAge: 600,
