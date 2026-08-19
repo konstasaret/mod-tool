@@ -1,5 +1,6 @@
 import { StrictMode, useCallback, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
+import { navigateTo } from '@devvit/web/client';
 import type { IdKitResponse, PortalState, StartVerificationResponse } from '../shared/contracts.js';
 import './styles.css';
 
@@ -170,6 +171,11 @@ function App() {
     }
   };
 
+  const openSelfieCheck = () => {
+    if (!pendingBridge) return;
+    navigateTo(pendingBridge.launchUrl);
+  };
+
   const canVerify =
     state?.signedIn && state.enabled && state.setupComplete && state.status === 'pending' && !loading;
 
@@ -212,9 +218,17 @@ function App() {
               <strong>Chrome extension fallback active</strong>
             )}
             <p>Open Selfie Check in a new tab, then keep this Reddit page open. It will update automatically.</p>
-            <a className="bridge-link" href={pendingBridge.launchUrl} target="_blank" rel="noreferrer">
+            <button className="bridge-link" type="button" onClick={openSelfieCheck}>
               Open Selfie Check
-            </a>
+            </button>
+            <label className="manual-link">
+              If Reddit does not open it, copy this URL into a new tab:
+              <input
+                readOnly
+                value={pendingBridge.launchUrl}
+                onFocus={(event) => event.currentTarget.select()}
+              />
+            </label>
             <span className="waiting">Waiting for completion…</span>
           </div>
         )}

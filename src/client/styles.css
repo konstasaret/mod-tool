@@ -63,15 +63,30 @@ button:disabled { cursor: not-allowed; opacity: 0.52; }
 .bridge-step p { margin: 0; font-size: 14px; line-height: 1.45; }
 .bridge-link {
   display: block;
+  width: 100%;
   padding: 13px 18px;
+  border: 0;
   border-radius: 999px;
   background: #1967e8;
   color: white;
+  cursor: pointer;
+  font: inherit;
   font-weight: 750;
   text-align: center;
-  text-decoration: none;
 }
 .bridge-link:hover { background: #0e56cb; }
+.manual-link { display: grid; gap: 6px; font-size: 12px; }
+.manual-link input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 9px 10px;
+  border: 1px solid #aac4ed;
+  border-radius: 8px;
+  background: white;
+  color: #252a32;
+  font: 12px/1.3 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
 .waiting { font-size: 13px; }
 
 .notice, .error { margin: 14px 0 0; padding: 12px 14px; border-radius: 12px; font-size: 14px; }
