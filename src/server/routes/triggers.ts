@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { context, reddit, settings } from '@devvit/web/server';
+import { context, reddit } from '@devvit/web/server';
 import type {
   OnPostSubmitRequest,
   TriggerResponse,
@@ -30,20 +30,24 @@ async function gateSubmission(input: {
   const { author, contentId, contentType } = input;
   if (!author?.id || !author.name || !contentId) return;
 
-  const [appEnabled, gateEnabled] = await Promise.all([
-    isEnabled(),
-    settings.get<boolean>('requireVerificationForPosts').then((value) => value ?? true),
-  ]);
-  if (!appEnabled || !gateEnabled) return;
+  const appEnabled = await isEnabled();
+  if (!appEnabled) {
+    console.log('Post gate skipped because World Human Check is disabled');
+    return;
+  }
 
   const [verified, exempt] = await Promise.all([
     getVerifiedUser(author.id),
     isExempt(author),
   ]);
+  console.log('Post gate decision', {
+    verified: Boolean(verified),
+    appAccount: exempt,
+  });
   if (
     !shouldGateContent({
       appEnabled,
-      gateEnabled,
+      gateEnabled: true,
       verified: Boolean(verified),
       exempt,
     })
@@ -59,6 +63,7 @@ async function gateSubmission(input: {
   }
 
   await reddit.remove(contentId as `t1_${string}` | `t3_${string}`, false);
+  console.log('Post removed pending Selfie Check');
   try {
     const held = await holdContent(author.id, {
       id: contentId,

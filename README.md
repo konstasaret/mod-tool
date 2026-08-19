@@ -56,7 +56,7 @@ Devvit global settings:
 - `worldRpSigningKey` (secret)
 - `signalHmacSecret` (secret, at least 32 characters)
 
-World Human Check and the post gate are enabled by default. Moderators can customize the applied flair and private-message copy.
+The post gate is always active while World Human Check is enabled. Moderators can customize the applied flair and private-message copy.
 
 The bridge uses `BRIDGE_PUBLIC_BASE_URL`, `BRIDGE_API_TOKEN`, and the host-provided `PORT`. The token remains required for compatibility with older callback sessions; this POC's polling session route does not use it.
 

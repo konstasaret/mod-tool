@@ -86,12 +86,6 @@
         "type": "paragraph",
         "label": "Verification request message",
         "defaultValue": "A moderator has requested a privacy-preserving human check. Open the community verification portal to continue."
-      },
-      "requireVerificationForPosts": {
-        "type": "boolean",
-        "label": "Require Human Check for posts",
-        "helpText": "Remove posts from unverified users and restore held posts after a successful check.",
-        "defaultValue": true
       }
     }
   },
