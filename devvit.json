@@ -7,7 +7,7 @@
       "default": {
         "inline": true,
         "entry": "index.html",
-        "height": "tall"
+        "height": "regular"
       }
     }
   },

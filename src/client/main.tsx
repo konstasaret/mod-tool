@@ -182,30 +182,31 @@ function App() {
 
   const canVerify =
     state?.signedIn && state.enabled && state.setupComplete && state.status === 'pending' && !loading;
+  const heading =
+    state?.status === 'verified'
+      ? 'You’re verified'
+      : state?.status === 'pending'
+        ? 'Unlock your post'
+        : state?.status === 'failed'
+          ? 'Verification expired'
+        : 'Human badge';
+  const description =
+    !state
+      ? 'Checking your status…'
+      : state.status === 'verified'
+        ? 'Your Human badge is active in this community.'
+        : state.status === 'pending'
+          ? 'Verify with World to publish your post and get your Human badge.'
+          : state.status === 'failed'
+            ? 'Ask a moderator for a new verification link.'
+          : 'Post in this community to get started.';
 
   return (
     <main className="page">
       <section className="card" aria-live="polite">
         <div className="wordmark" aria-label="World">WORLD</div>
-        <p className="eyebrow">UNIQUE HUMAN</p>
-        <h1>Unlock your post</h1>
-        <p className="lede">
-          Complete a quick Selfie Check. We’ll publish your post and add your Human badge
-          automatically.
-        </p>
-
-        <div className={`status status-${state?.status ?? 'loading'}`}>
-          <strong>
-            {loading && !state
-              ? 'Loading…'
-              : state?.status === 'verified'
-                ? '✓ You’re verified'
-                : state?.status === 'pending'
-                  ? 'One quick check to go'
-                  : 'Nothing to verify yet'}
-          </strong>
-          <span>{state?.message}</span>
-        </div>
+        <h1>{heading}</h1>
+        <p className="lede">{description}</p>
 
         {!state?.setupComplete && state && (
           <p className="notice">Selfie Check isn’t available yet. Please let a moderator know.</p>
@@ -219,41 +220,30 @@ function App() {
         )}
         {pendingBridge && (
           <div className="bridge-step">
-            <strong>Selfie Check opened</strong>
-            <p>
-              Finish the check in the new tab and keep this page open. Your post and badge will
-              update automatically.
-            </p>
+            <strong>Finish in World</strong>
+            <p>Keep this page open. We’ll update your post automatically.</p>
             <button className="bridge-link" type="button" onClick={openSelfieCheck}>
-              Open Selfie Check again
+              Open again
             </button>
-            <label className="manual-link">
-              Didn’t open? Copy this link into a new tab:
-              <input
-                readOnly
-                value={pendingBridge.launchUrl}
-                onFocus={(event) => event.currentTarget.select()}
-              />
-            </label>
-            <span className="waiting">Waiting for your verification…</span>
+            <details className="manual-link">
+              <summary>Link didn’t open?</summary>
+              <label>
+                Copy into a new tab
+                <input
+                  readOnly
+                  value={pendingBridge.launchUrl}
+                  onFocus={(event) => event.currentTarget.select()}
+                />
+              </label>
+            </details>
           </div>
         )}
-        <button className="secondary" disabled={loading} onClick={() => void refresh()}>
-          Check progress
-        </button>
         {state?.status === 'verified' && (
           <button className="link-button" disabled={loading} onClick={() => void unlink()}>
-            Remove my verification from this community
+            Remove verification
           </button>
         )}
-
-        <div className="privacy">
-          <strong>Private by design</strong>
-          <p>
-            World never receives your Reddit username. Your verification is private to this
-            community.
-          </p>
-        </div>
+        <p className="privacy-note">World never receives your Reddit username.</p>
       </section>
     </main>
   );
