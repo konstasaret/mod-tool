@@ -36,7 +36,7 @@ menu.post('/request-human-check', async (c) => {
     const author = await getTargetAuthor(input.targetId, input.location);
     const existing = await getVerifiedUser(author.userId);
     if (existing) {
-      return c.json<UiResponse>({ showToast: 'This author is already Human Checked.' });
+      return c.json<UiResponse>({ showToast: 'This author is already verified to post.' });
     }
 
     const { created } = await ensureHumanCheckRequest(author, input.targetId);

@@ -55,7 +55,7 @@ export function humanCheckStatusMessage(input: {
   requestedAt?: string;
 }): string {
   if (input.verifiedAt) {
-    return `Human Checked on ${new Date(input.verifiedAt).toLocaleDateString()}.`;
+    return `Verified to post on ${new Date(input.verifiedAt).toLocaleDateString()}.`;
   }
   if (input.requestStatus === 'pending') {
     const suffix = input.requestedAt

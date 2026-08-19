@@ -65,7 +65,7 @@ function App() {
         }
         setQrCode(undefined);
         setPhase('success');
-        setMessage('Return to Reddit—your post and Human badge are being updated.');
+        setMessage('Return to Reddit—your post is being published.');
         window.setTimeout(() => window.close(), 1200);
       } catch (error) {
         if (abortController.signal.aborted) return;
@@ -88,7 +88,7 @@ function App() {
             ? 'You’re verified'
             : phase === 'waiting'
               ? 'Scan to verify'
-              : 'Get your Human badge'}
+              : 'Verify to post'}
         </h1>
         <p className={`message ${phase}`}>{message}</p>
         {qrCode && (

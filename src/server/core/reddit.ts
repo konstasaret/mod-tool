@@ -41,7 +41,7 @@ export async function ensurePortalPost(): Promise<string> {
     title: 'Unlock your post with World ID',
     entry: 'default',
     textFallback: {
-      text: 'Open this post in Reddit to verify, publish your post, and get your Human badge.',
+      text: 'Open this post in Reddit to verify and publish your post.',
     },
   });
   await setPortalPost(post.id, context.appVersion);
@@ -59,25 +59,14 @@ export async function notifyUserOfRequest(
 ): Promise<void> {
   const requestMessage =
     (await settings.get<string>('requestMessage'))?.trim() ||
-    'Verify with World to unlock posting and get your Human badge.';
+    'Verify with World to unlock posting.';
   const gateNotice = heldContentType
-    ? `Your ${heldContentType} is waiting—not deleted. Complete a quick Selfie Check and we’ll publish it automatically.\n\n`
+    ? `Your ${heldContentType} is waiting—not deleted. Verify with World and we’ll publish it automatically.\n\n`
     : '';
   await reddit.sendPrivateMessage({
     to: username,
     subject: `Unlock your post in r/${context.subredditName}`,
     text: `${gateNotice}${requestMessage}\n\n[Verify & publish my post](${portalUrl(postId)})`,
-  });
-}
-
-export async function assignVerifiedFlair(username: string): Promise<void> {
-  const flairText = (await settings.get<string>('flairText'))?.trim() || '🌐 Human Checked';
-  await reddit.setUserFlair({
-    subredditName: context.subredditName,
-    username,
-    text: flairText,
-    backgroundColor: '#2B6FF7',
-    textColor: 'light',
   });
 }
 

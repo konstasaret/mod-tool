@@ -63,7 +63,7 @@ async function gateSubmission(input: {
   }
 
   await reddit.remove(contentId as `t1_${string}` | `t3_${string}`, false);
-  console.log('Post removed pending Selfie Check');
+  console.log('Post removed pending World verification');
   try {
     const held = await holdContent(author.id, {
       id: contentId,

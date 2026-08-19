@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { context, reddit, settings } from '@devvit/web/server';
+import { context } from '@devvit/web/server';
 import type {
   DirectVerificationSession,
   IdKitResponse,
@@ -9,7 +9,7 @@ import type {
 import { getAppConfig, isConfigured, isEnabled } from '../core/config.js';
 import { deriveOpaqueSignal } from '../core/privacy.js';
 import { isDevvitDomainPermissionDenied } from '../core/pocFallback.js';
-import { assignVerifiedFlair, restoreHeldContent } from '../core/reddit.js';
+import { restoreHeldContent } from '../core/reddit.js';
 import {
   claimNullifier,
   clearBridgeSession,
@@ -77,7 +77,7 @@ api.get('/init', async (c) => {
       status: 'verified',
       level: verified.level,
       verifiedAt: verified.verifiedAt,
-      message: 'Your Human badge is active in this community.',
+      message: 'You’re verified and can post in this community.',
     });
   }
   if (pending) {
@@ -114,7 +114,7 @@ api.post('/verification/start', async (c) => {
     const request = await getPendingRequestForUser(context.userId);
     if (!request || request.status !== 'pending') {
       return c.json<StartVerificationResponse>(
-        { ok: false, error: 'No pending Selfie Check was found.' },
+        { ok: false, error: 'No pending World verification was found.' },
         404
       );
     }
@@ -149,7 +149,7 @@ api.post('/verification/start', async (c) => {
       signal,
       rpContext,
       environment: config.environment,
-      verificationLevel: 'selfie',
+      verificationLevel: 'proof_of_human',
       expiresAt: rpContext.expires_at * 1000,
     };
     let bridge: BridgeLaunch;
@@ -178,7 +178,7 @@ api.post('/verification/start', async (c) => {
   } catch (error) {
     console.error('Verification start failed', error);
     return c.json<StartVerificationResponse>(
-      { ok: false, error: 'Selfie Check could not start. Ask a moderator to check app setup.' },
+      { ok: false, error: 'World verification could not start. Ask a moderator to check app setup.' },
       500
     );
   }
@@ -253,14 +253,10 @@ api.post('/verification/complete', async (c) => {
       throw new Error('This World credential already completed this community action');
     }
     await completeRequest(request, config.action, nullifier);
-    const postProcessing = await Promise.allSettled([
-      assignVerifiedFlair(request.redditUsername),
-      restoreHeldContent(request.redditUserId),
-    ]);
-    for (const result of postProcessing) {
-      if (result.status === 'rejected') {
-        console.error('Verification completed, but post-processing failed', result.reason);
-      }
+    try {
+      await restoreHeldContent(request.redditUserId);
+    } catch (error) {
+      console.error('Verification completed, but held content could not be restored', error);
     }
     return c.json({ ok: true });
   } catch (error) {
@@ -271,14 +267,6 @@ api.post('/verification/complete', async (c) => {
 
 api.post('/unlink', async (c) => {
   if (!context.userId) return c.json({ ok: false, error: 'Sign in to Reddit first.' }, 401);
-  const verified = await unlinkUser(context.userId);
-  if (verified) {
-    const flairText = (await settings.get<string>('flairText'))?.trim() || '🌐 Human Checked';
-    const user = await reddit.getUserById(context.userId);
-    const flair = await user?.getUserFlairBySubreddit(context.subredditName);
-    if (flair?.flairText === flairText) {
-      await reddit.removeUserFlair(context.subredditName, verified.redditUsername);
-    }
-  }
+  await unlinkUser(context.userId);
   return c.json({ ok: true });
 });

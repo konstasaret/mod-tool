@@ -59,7 +59,8 @@ function validSession(input: Omit<BridgeSessionInput, 'callbackUrl'>): boolean {
       ['production', 'staging'].includes(input.environment) &&
       input.rpContext?.rp_id === input.rpId &&
       Number.isFinite(input.rpContext?.expires_at) &&
-      (input.verificationLevel === undefined || input.verificationLevel === 'selfie')
+      (input.verificationLevel === undefined ||
+        ['selfie', 'proof_of_human'].includes(input.verificationLevel))
   );
 }
 

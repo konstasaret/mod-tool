@@ -98,7 +98,7 @@ function App() {
           }
           return;
         }
-        if (!cancelled) throw new Error('Selfie Check expired. Start again.');
+        if (!cancelled) throw new Error('Verification expired. Start again.');
       } catch (caught) {
         if (!cancelled) {
           setPendingBridge(undefined);
@@ -162,7 +162,7 @@ function App() {
   };
 
   const unlink = async () => {
-    if (!window.confirm('Remove your Human Check state and matching flair from this community?')) return;
+    if (!window.confirm('Remove your verification state from this community?')) return;
     setLoading(true);
     setError(undefined);
     try {
@@ -189,14 +189,14 @@ function App() {
         ? 'Unlock your post'
         : state?.status === 'failed'
           ? 'Verification expired'
-        : 'Human badge';
+        : 'World verification';
   const description =
     !state
       ? 'Checking your status…'
       : state.status === 'verified'
-        ? 'Your Human badge is active in this community.'
+        ? 'You can post in this community.'
         : state.status === 'pending'
-          ? 'Verify with World to publish your post and get your Human badge.'
+          ? 'Verify with World to publish your post.'
           : state.status === 'failed'
             ? 'Ask a moderator for a new verification link.'
           : 'Post in this community to get started.';
@@ -209,7 +209,7 @@ function App() {
         <p className="lede">{description}</p>
 
         {!state?.setupComplete && state && (
-          <p className="notice">Selfie Check isn’t available yet. Please let a moderator know.</p>
+          <p className="notice">World verification isn’t available yet. Please let a moderator know.</p>
         )}
         {error && <p className="error">{error}</p>}
 

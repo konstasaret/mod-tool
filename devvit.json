@@ -40,7 +40,7 @@
       },
       "worldAction": {
         "type": "string",
-        "label": "Selfie Check action",
+        "label": "World verification action",
         "defaultValue": "reddit-human-selfie-v1"
       },
       "worldEnvironment": {
@@ -77,30 +77,25 @@
         "label": "Enable World Human Check",
         "defaultValue": true
       },
-      "flairText": {
-        "type": "string",
-        "label": "Verified user flair",
-        "defaultValue": "🌐 Human Checked"
-      },
       "requestMessage": {
         "type": "paragraph",
         "label": "Verification request message",
-        "defaultValue": "Verify with World to unlock posting and get your Human badge."
+        "defaultValue": "Verify with World to unlock posting."
       }
     }
   },
   "menu": {
     "items": [
       {
-        "label": "Open Human badge page",
-        "description": "Open the community page for World verification and Human badges.",
+        "label": "Open World verification",
+        "description": "Open the community page for World verification.",
         "location": "subreddit",
         "forUserType": "moderator",
         "endpoint": "/internal/menu/open-portal"
       },
       {
         "label": "Request Human Check",
-        "description": "Request a Selfie Check from this post or comment author.",
+        "description": "Request World verification from this post or comment author.",
         "location": ["post", "comment"],
         "forUserType": "moderator",
         "endpoint": "/internal/menu/request-human-check"
