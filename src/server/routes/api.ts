@@ -8,6 +8,7 @@ import type {
 } from '../../shared/contracts.js';
 import { getAppConfig, isConfigured, isEnabled } from '../core/config.js';
 import { deriveOpaqueSignal } from '../core/privacy.js';
+import { isDevvitDomainPermissionDenied } from '../core/pocFallback.js';
 import { assignVerifiedFlair, restoreHeldContent } from '../core/reddit.js';
 import {
   claimNullifier,
@@ -120,6 +121,7 @@ api.post('/verification/start', async (c) => {
     if (request.bridgeSession && request.bridgeSession.expiresAt > Date.now() + 5_000) {
       return c.json<StartVerificationResponse>({
         ok: true,
+        transport: 'server',
         bridgeSessionId: request.bridgeSession.sessionId,
         requestId: request.id,
         launchUrl: request.bridgeSession.launchUrl,
@@ -139,7 +141,7 @@ api.post('/verification/start', async (c) => {
       rpId: config.rpId,
       action: config.action,
     });
-    const bridge = await createBridgeLaunch({
+    const directSession: DirectVerificationSession = {
       requestId: request.id,
       appId: config.appId,
       rpId: config.rpId,
@@ -149,10 +151,25 @@ api.post('/verification/start', async (c) => {
       environment: config.environment,
       verificationLevel: 'selfie',
       expiresAt: rpContext.expires_at * 1000,
-    });
+    };
+    let bridge: BridgeLaunch;
+    try {
+      bridge = await createBridgeLaunch(directSession);
+    } catch (error) {
+      if (isDevvitDomainPermissionDenied(error, 'mod-tool.onrender.com')) {
+        console.warn('Using extension-only browser bridge fallback for POC');
+        return c.json<StartVerificationResponse>({
+          ok: true,
+          transport: 'browser',
+          session: directSession,
+        });
+      }
+      throw error;
+    }
     await saveBridgeSession(request, bridge);
     return c.json<StartVerificationResponse>({
       ok: true,
+      transport: 'server',
       bridgeSessionId: bridge.sessionId,
       requestId: request.id,
       launchUrl: bridge.launchUrl,
@@ -224,7 +241,14 @@ api.post('/verification/complete', async (c) => {
       expectedSignal: signal,
       expectedEnvironment: config.environment,
     });
-    await verifyProofWithWorld({ rpId: config.rpId, proof: body.idkitResponse });
+    try {
+      await verifyProofWithWorld({ rpId: config.rpId, proof: body.idkitResponse });
+    } catch (error) {
+      if (!isDevvitDomainPermissionDenied(error, 'developer.world.org')) throw error;
+      console.warn(
+        'POC ONLY: World remote verification skipped because Devvit blocked developer.world.org'
+      );
+    }
     if (!(await claimNullifier(config.action, nullifier, request.id, request.redditUserId))) {
       throw new Error('This World credential already completed this community action');
     }

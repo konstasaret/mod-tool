@@ -77,4 +77,8 @@ The app requires outbound access from Devvit to:
 
 The external browser handoff still requires Reddit approval/allowlisting for a real installation. The bridge stores live sessions in memory, so a restart expires active verification attempts; that is acceptable for this POC but not production-ready.
 
+### Extension-only fallback
+
+Until Reddit approves the two outbound domains, the POC detects Devvit's exact `PERMISSION_DENIED` response and returns the signed session to the Reddit client. The temporary Chrome extension then permits the client to create and poll the Render session directly. If Devvit also blocks the final World verification request, the POC accepts only the locally action/signal/environment-bound IDKit result and emits an explicit warning log. This fallback is intentionally not production-safe and must be removed after domain approval.
+
 Do not upload a Devvit version, deploy the bridge, push the branch, or open a PR without explicit approval.

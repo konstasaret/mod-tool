@@ -24,10 +24,16 @@ export type PortalState = {
 export type StartVerificationResponse =
   | {
       ok: true;
+      transport: 'server';
       launchUrl: string;
       expiresAt: number;
       bridgeSessionId: string;
       requestId: string;
+    }
+  | {
+      ok: true;
+      transport: 'browser';
+      session: DirectVerificationSession;
     }
   | { ok: false; error: string };
 
