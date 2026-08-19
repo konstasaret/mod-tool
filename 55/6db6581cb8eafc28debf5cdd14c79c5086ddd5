@@ -1,0 +1,29 @@
+devvit.json
+  s_67e70ea6c3a04f::t_f2fefe97384d4e 25-28
+src/bridge/client/main.tsx
+  s_67e70ea6c3a04f::t_f2fefe97384d4e 68-69,71
+src/server/routes/api.ts
+  s_67e70ea6c3a04f::t_f2fefe97384d4e 88,93,233
+src/bridge/server.ts
+  s_67e70ea6c3a04f::t_f2fefe97384d4e 5,9,13-18,51-94,112,123-150,169-181
+src/shared/contracts.ts
+  s_67e70ea6c3a04f::t_f2fefe97384d4e 48
+src/client/main.tsx
+  s_67e70ea6c3a04f::t_f2fefe97384d4e 10,14,16,31-41,43-55,92-95,97-108,110-112,114,206-207,213
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "556db6581cb8eafc28debf5cdd14c79c5086ddd5",
+  "prompts": {},
+  "sessions": {
+    "s_67e70ea6c3a04f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0165e-29b1-73f3-b453-f87c60d055d7",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "mustafakuloglu <mustafakuloglunun@gmail.com>"
+    }
+  }
+}
