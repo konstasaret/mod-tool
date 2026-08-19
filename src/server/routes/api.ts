@@ -40,6 +40,13 @@ import {
 import { createRpContext, validateProofBinding } from '../core/world.js';
 
 export const api = new Hono();
+const WORLD_BRIDGE_ORIGIN = 'https://mod-tool.onrender.com';
+
+type PollingBridgeResult = {
+  status?: string;
+  requestId?: string;
+  idkitResponse?: IdKitResponse;
+};
 
 async function createBridgeLaunch(input: {
   request: VerificationRequest;
@@ -112,6 +119,30 @@ function createDirectVerificationSession(input: {
     environment: input.config.environment,
     verificationLevel: input.verificationLevel,
     expiresAt: rpContext.expires_at * 1000,
+  };
+}
+
+async function createPollingBridgeLaunch(
+  session: DirectVerificationSession
+): Promise<{ bridgeSessionId: string; launchUrl: string; expiresAt: number }> {
+  const response = await fetch(`${WORLD_BRIDGE_ORIGIN}/api/polling-sessions`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', accept: 'application/json' },
+    body: JSON.stringify(session),
+  });
+  if (!response.ok) throw new Error(`Polling bridge rejected session creation (${response.status})`);
+  const result = (await response.json()) as {
+    sessionId?: string;
+    launchUrl?: string;
+    expiresAt?: number;
+  };
+  if (!result.sessionId || !result.launchUrl || !result.expiresAt) {
+    throw new Error('Polling bridge returned an invalid session');
+  }
+  return {
+    bridgeSessionId: result.sessionId,
+    launchUrl: result.launchUrl,
+    expiresAt: result.expiresAt,
   };
 }
 
@@ -236,13 +267,49 @@ api.post('/human-badge/start', async (c) => {
       action: config.humanBadgeAction,
       verificationLevel: 'orb',
     });
-    return c.json<StartVerificationResponse>({ ok: true, session });
+    const bridge = await createPollingBridgeLaunch(session);
+    return c.json<StartVerificationResponse>({
+      ok: true,
+      ...bridge,
+      requestId: request.id,
+    });
   } catch (error) {
     console.error('Human badge verification start failed', error);
     return c.json<StartVerificationResponse>(
       { ok: false, error: 'Human badge verification could not start. Ask a moderator to check app setup.' },
       500
     );
+  }
+});
+
+api.post('/human-badge/poll', async (c) => {
+  try {
+    if (!context.userId) return c.json({ ok: false, error: 'Sign in to Reddit first.' }, 401);
+    const body = await c.req.json<{ bridgeSessionId?: string; requestId?: string }>();
+    if (!body.bridgeSessionId || !body.requestId) {
+      return c.json({ ok: false, error: 'Missing bridge session.' }, 400);
+    }
+
+    const request = await getHumanBadgeRequest(body.requestId);
+    if (!request || request.status !== 'pending' || request.redditUserId !== context.userId) {
+      return c.json({ ok: false, error: 'Verification request is not pending.' }, 409);
+    }
+
+    const response = await fetch(
+      `${WORLD_BRIDGE_ORIGIN}/api/polling-sessions/${encodeURIComponent(body.bridgeSessionId)}/result`,
+      { headers: { accept: 'application/json' } }
+    );
+    if (response.status === 202) return c.json({ status: 'pending' }, 202);
+    if (!response.ok) throw new Error(`Polling bridge returned ${response.status}`);
+
+    const result = (await response.json()) as PollingBridgeResult;
+    if (result.requestId !== body.requestId || !result.idkitResponse) {
+      throw new Error('Polling bridge returned an invalid proof');
+    }
+    return c.json({ status: 'complete', idkitResponse: result.idkitResponse });
+  } catch (error) {
+    console.error('Human badge bridge poll failed', error);
+    return c.json({ ok: false, error: 'Verification bridge status could not be loaded.' }, 502);
   }
 });
 
