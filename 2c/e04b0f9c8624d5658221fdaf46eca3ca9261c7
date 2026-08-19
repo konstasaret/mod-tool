@@ -1,0 +1,31 @@
+src/client/main.tsx
+  s_67e70ea6c3a04f::t_e036f46f01f075 6-7,13,57-69,122-139,144-147,149-151,211-213
+  s_67e70ea6c3a04f::t_71564f5d08d9b3 16-21,75-80,140-143,148
+README.md
+  s_67e70ea6c3a04f::t_e036f46f01f075 80-83
+src/server/routes/api.ts
+  s_67e70ea6c3a04f::t_e036f46f01f075 11,124,144,154-168,172,244-251
+src/server/core/pocFallback.ts
+  s_67e70ea6c3a04f::t_e036f46f01f075 1-8
+src/shared/contracts.ts
+  s_67e70ea6c3a04f::t_e036f46f01f075 27,33-36
+  s_67e70ea6c3a04f::t_b073ea2c32b165 37
+src/server/core/pocFallback.test.ts
+  s_67e70ea6c3a04f::t_e036f46f01f075 1-25
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "2ce04b0f9c8624d5658221fdaf46eca3ca9261c7",
+  "prompts": {},
+  "sessions": {
+    "s_67e70ea6c3a04f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0165e-29b1-73f3-b453-f87c60d055d7",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "mustafakuloglu <mustafakuloglunun@gmail.com>"
+    }
+  }
+}
