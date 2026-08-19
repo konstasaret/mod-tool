@@ -29,12 +29,18 @@ export type VerifiedUser = {
 
 const keys = {
   portalPost: 'whc:v1:portal-post',
+  portalPostVersion: 'whc:v1:portal-post-version',
   request: (id: string) => `whc:v1:request:${id}`,
   pendingUser: (userId: string) => `whc:v1:user:${userId}:pending`,
   verifiedUser: (userId: string) => `whc:v1:user:${userId}:verified`,
+  humanBadgeRequest: (id: string) => `whc:v1:human-badge:request:${id}`,
+  humanBadgePendingUser: (userId: string) => `whc:v1:human-badge:user:${userId}:pending`,
+  humanBadgeVerifiedUser: (userId: string) => `whc:v1:human-badge:user:${userId}:verified`,
   heldUser: (userId: string) => `whc:v1:user:${userId}:held`,
   nullifier: (action: string, decimalNullifier: string) =>
     `whc:v1:nullifier:${action}:${decimalNullifier}`,
+  humanBadgeNullifier: (action: string, decimalNullifier: string) =>
+    `whc:v1:human-badge:nullifier:${action}:${decimalNullifier}`,
 };
 
 export async function saveRequest(request: VerificationRequest): Promise<void> {
@@ -59,6 +65,33 @@ export async function getPendingRequestForUser(
 
 export async function getVerifiedUser(userId: string): Promise<VerifiedUser | undefined> {
   const raw = await redis.get(keys.verifiedUser(userId));
+  return raw ? (JSON.parse(raw) as VerifiedUser) : undefined;
+}
+
+export async function saveHumanBadgeRequest(request: VerificationRequest): Promise<void> {
+  const expires = new Date(Date.now() + REQUEST_TTL_MS);
+  await Promise.all([
+    redis.set(keys.humanBadgeRequest(request.id), JSON.stringify(request), { expiration: expires }),
+    redis.set(keys.humanBadgePendingUser(request.redditUserId), request.id, { expiration: expires }),
+  ]);
+}
+
+export async function getHumanBadgeRequest(
+  id: string
+): Promise<VerificationRequest | undefined> {
+  const raw = await redis.get(keys.humanBadgeRequest(id));
+  return raw ? (JSON.parse(raw) as VerificationRequest) : undefined;
+}
+
+export async function getPendingHumanBadgeRequestForUser(
+  userId: string
+): Promise<VerificationRequest | undefined> {
+  const requestId = await redis.get(keys.humanBadgePendingUser(userId));
+  return requestId ? getHumanBadgeRequest(requestId) : undefined;
+}
+
+export async function getHumanBadgeUser(userId: string): Promise<VerifiedUser | undefined> {
+  const raw = await redis.get(keys.humanBadgeVerifiedUser(userId));
   return raw ? (JSON.parse(raw) as VerifiedUser) : undefined;
 }
 
@@ -117,12 +150,44 @@ export async function completeRequest(
   ]);
 }
 
+export async function completeHumanBadgeRequest(
+  request: VerificationRequest,
+  action: string,
+  nullifier: string
+): Promise<void> {
+  const verifiedAt = new Date().toISOString();
+  const completed: VerificationRequest = { ...request, status: 'verified', verifiedAt };
+  const verified: VerifiedUser = {
+    requestId: request.id,
+    redditUsername: request.redditUsername,
+    level: 'orb',
+    verifiedAt,
+    action,
+    decimalNullifier: BigInt(nullifier).toString(10),
+  };
+  await Promise.all([
+    redis.set(keys.humanBadgeRequest(request.id), JSON.stringify(completed)),
+    redis.set(keys.humanBadgeVerifiedUser(request.redditUserId), JSON.stringify(verified)),
+    redis.del(keys.humanBadgePendingUser(request.redditUserId)),
+  ]);
+}
+
 export async function failRequest(
   request: VerificationRequest,
   reason: string
 ): Promise<void> {
   await redis.set(
     keys.request(request.id),
+    JSON.stringify({ ...request, status: 'failed', failureReason: reason })
+  );
+}
+
+export async function failHumanBadgeRequest(
+  request: VerificationRequest,
+  reason: string
+): Promise<void> {
+  await redis.set(
+    keys.humanBadgeRequest(request.id),
     JSON.stringify({ ...request, status: 'failed', failureReason: reason })
   );
 }
@@ -139,6 +204,26 @@ export async function claimNullifier(
   const result = await redis.set(key, value, {
     nx: true,
   });
+  if (result === 'OK') return true;
+  const existing = await redis.get(key);
+  if (!existing) return false;
+  try {
+    return (JSON.parse(existing) as { redditUserId?: string }).redditUserId === redditUserId;
+  } catch {
+    return false;
+  }
+}
+
+export async function claimHumanBadgeNullifier(
+  action: string,
+  nullifier: string,
+  requestId: string,
+  redditUserId: string
+): Promise<boolean> {
+  const decimal = BigInt(nullifier).toString(10);
+  const key = keys.humanBadgeNullifier(action, decimal);
+  const value = JSON.stringify({ requestId, redditUserId });
+  const result = await redis.set(key, value, { nx: true });
   if (result === 'OK') return true;
   const existing = await redis.get(key);
   if (!existing) return false;
@@ -166,10 +251,33 @@ export async function unlinkUser(userId: string): Promise<VerifiedUser | undefin
   return verified;
 }
 
+export async function unlinkHumanBadge(userId: string): Promise<VerifiedUser | undefined> {
+  const verified = await getHumanBadgeUser(userId);
+  const pending = await getPendingHumanBadgeRequestForUser(userId);
+  const deleteKeys = [
+    keys.humanBadgeVerifiedUser(userId),
+    keys.humanBadgePendingUser(userId),
+  ];
+  if (verified) {
+    deleteKeys.push(keys.humanBadgeRequest(verified.requestId));
+    deleteKeys.push(keys.humanBadgeNullifier(verified.action, verified.decimalNullifier));
+  }
+  if (pending) deleteKeys.push(keys.humanBadgeRequest(pending.id));
+  await redis.del(...deleteKeys);
+  return verified;
+}
+
 export async function getPortalPostId(): Promise<string | undefined> {
   return redis.get(keys.portalPost);
 }
 
-export async function setPortalPostId(postId: string): Promise<void> {
-  await redis.set(keys.portalPost, postId);
+export async function getPortalPostVersion(): Promise<string | undefined> {
+  return redis.get(keys.portalPostVersion);
+}
+
+export async function setPortalPost(postId: string, appVersion: string): Promise<void> {
+  await Promise.all([
+    redis.set(keys.portalPost, postId),
+    redis.set(keys.portalPostVersion, appVersion),
+  ]);
 }

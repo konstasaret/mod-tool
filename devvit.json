@@ -1,6 +1,6 @@
 {
   "$schema": "https://developers.reddit.com/schema/config-file.v1.json",
-  "name": "world-app",
+  "name": "orb-human-badge",
   "post": {
     "dir": "dist/client",
     "entrypoints": {
@@ -24,7 +24,7 @@
   "permissions": {
     "http": {
       "enable": true,
-      "domains": ["developer.world.org"]
+      "domains": ["mod-tool.onrender.com"]
     },
     "redis": true,
     "reddit": {
@@ -44,9 +44,10 @@
         "label": "World relying-party ID",
         "helpText": "Public rp_id from the World Developer Portal. Configure privately with Devvit settings."
       },
-      "worldAction": {
+      "worldHumanBadgeAction": {
         "type": "string",
-        "label": "Selfie Check action",
+        "label": "Proof of Human badge action",
+        "helpText": "World action used for the optional Orb-backed human badge. Defaults to the Selfie Check action for the POC.",
         "defaultValue": "reddit-human-selfie-v1"
       },
       "worldEnvironment": {
@@ -91,62 +92,27 @@
     "subreddit": {
       "enabled": {
         "type": "boolean",
-        "label": "Enable World Human Check",
+        "label": "Enable Orb human badge",
         "defaultValue": true
       },
-      "flairText": {
+      "humanBadgeFlairText": {
         "type": "string",
-        "label": "Verified user flair",
-        "defaultValue": "🌐 Human Checked"
-      },
-      "requestMessage": {
-        "type": "paragraph",
-        "label": "Verification request message",
-        "defaultValue": "A moderator has requested a privacy-preserving human check. Open the community verification portal to continue."
-      },
-      "requireVerificationForPosts": {
-        "type": "boolean",
-        "label": "Require Human Check for posts",
-        "helpText": "Remove posts from unverified users and restore held posts after a successful check.",
-        "defaultValue": false
-      },
-      "requireVerificationForComments": {
-        "type": "boolean",
-        "label": "Require Human Check for comments",
-        "helpText": "Remove comments from unverified users and restore held comments after a successful check.",
-        "defaultValue": false
+        "label": "Orb-verified human badge flair",
+        "helpText": "Uses the unique_human custom emoji uploaded to the subreddit.",
+        "defaultValue": ":unique_human: human"
       }
     }
   },
   "menu": {
     "items": [
       {
-        "label": "Open World Human Check portal",
-        "description": "Create or open the community verification entry point.",
+        "label": "Open Orb Human Badge portal",
+        "description": "Create or open the community's Orb badge entry point.",
         "location": "subreddit",
         "forUserType": "moderator",
         "endpoint": "/internal/menu/open-portal"
-      },
-      {
-        "label": "Request Human Check",
-        "description": "Request a Selfie Check from this post or comment author.",
-        "location": ["post", "comment"],
-        "forUserType": "moderator",
-        "endpoint": "/internal/menu/request-human-check"
-      },
-      {
-        "label": "View Human Check status",
-        "description": "Show this author's community-scoped verification status.",
-        "location": ["post", "comment"],
-        "forUserType": "moderator",
-        "endpoint": "/internal/menu/view-status"
       }
     ]
-  },
-  "triggers": {
-    "onAppInstall": "/internal/triggers/on-app-install",
-    "onPostSubmit": "/internal/triggers/on-post-submit",
-    "onCommentSubmit": "/internal/triggers/on-comment-submit"
   },
   "scripts": {
     "dev": "vite build --watch",

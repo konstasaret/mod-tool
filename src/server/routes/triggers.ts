@@ -15,7 +15,7 @@ import {
   type TargetAuthor,
 } from '../core/reddit.js';
 import { ensureHumanCheckRequest } from '../core/requests.js';
-import { getVerifiedUser, holdContent } from '../core/state.js';
+import { getHumanBadgeUser, getVerifiedUser, holdContent } from '../core/state.js';
 
 export const triggers = new Hono();
 
@@ -41,15 +41,16 @@ async function gateSubmission(input: {
   ]);
   if (!appEnabled || !gateEnabled) return;
 
-  const [verified, exempt] = await Promise.all([
+  const [verified, humanBadge, exempt] = await Promise.all([
     getVerifiedUser(author.id),
+    getHumanBadgeUser(author.id),
     isExempt(author),
   ]);
   if (
     !shouldGateContent({
       appEnabled,
       gateEnabled,
-      verified: Boolean(verified),
+      verified: Boolean(verified || humanBadge),
       exempt,
     })
   ) {
@@ -82,22 +83,6 @@ async function gateSubmission(input: {
     throw error;
   }
 }
-
-triggers.post('/on-app-install', async (c) => {
-  try {
-    const postId = await ensurePortalPost();
-    return c.json<TriggerResponse>({
-      status: 'success',
-      message: `World Human Check portal created (${postId}).`,
-    });
-  } catch (error) {
-    console.error('App install portal creation failed', error);
-    return c.json<TriggerResponse>(
-      { status: 'error', message: 'Installed, but the verification portal could not be created.' },
-      500
-    );
-  }
-});
 
 triggers.post('/on-post-submit', async (c) => {
   try {

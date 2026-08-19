@@ -26,6 +26,7 @@ export function validateProofBinding(input: {
   expectedAction: string;
   expectedSignal: string;
   expectedEnvironment: WorldEnvironment;
+  expectedIdentifier?: string;
 }): string {
   if (input.proof.action !== input.expectedAction) throw new Error('World proof action mismatch');
   if (input.proof.environment !== input.expectedEnvironment) {
@@ -33,6 +34,9 @@ export function validateProofBinding(input: {
   }
   const response = input.proof.responses?.[0];
   if (!response?.nullifier) throw new Error('World proof has no nullifier');
+  if (input.expectedIdentifier && response.identifier !== input.expectedIdentifier) {
+    throw new Error('World proof credential mismatch');
+  }
   if (response.signal_hash !== hashSignal(input.expectedSignal)) {
     throw new Error('World proof signal mismatch');
   }

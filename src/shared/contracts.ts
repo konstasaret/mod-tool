@@ -1,5 +1,5 @@
 export type VerificationStatus = 'none' | 'pending' | 'verified' | 'failed';
-export type VerificationLevel = 'selfie';
+export type VerificationLevel = 'selfie' | 'orb';
 export type WorldEnvironment = 'production' | 'staging';
 
 export type RpContext = {
@@ -11,6 +11,7 @@ export type RpContext = {
 };
 
 export type PortalState = {
+  signedIn: boolean;
   enabled: boolean;
   setupComplete: boolean;
   status: VerificationStatus;
@@ -18,10 +19,14 @@ export type PortalState = {
   requestedAt?: string;
   verifiedAt?: string;
   message: string;
+  humanBadgeStatus: VerificationStatus;
+  humanBadgeRequestedAt?: string;
+  humanBadgeVerifiedAt?: string;
 };
 
 export type StartVerificationResponse =
   | { ok: true; launchUrl: string; expiresAt: number }
+  | { ok: true; session: DirectVerificationSession }
   | { ok: false; error: string };
 
 export type BridgeSessionInput = {
@@ -33,9 +38,14 @@ export type BridgeSessionInput = {
   rpContext: RpContext;
   environment: WorldEnvironment;
   callbackUrl: string;
+  verificationLevel?: VerificationLevel;
 };
 
 export type BridgePublicSession = Omit<BridgeSessionInput, 'callbackUrl' | 'requestId'> & {
+  expiresAt: number;
+};
+
+export type DirectVerificationSession = Omit<BridgeSessionInput, 'callbackUrl'> & {
   expiresAt: number;
 };
 
