@@ -81,18 +81,6 @@ export async function assignVerifiedFlair(username: string): Promise<void> {
   });
 }
 
-export async function isSubredditModerator(username: string): Promise<boolean> {
-  const moderators = await reddit
-    .getModerators({
-      subredditName: context.subredditName,
-      username,
-      limit: 1,
-      pageSize: 1,
-    })
-    .all();
-  return moderators.length > 0;
-}
-
 export async function restoreHeldContent(userId: string): Promise<void> {
   const held = await getHeldContent(userId);
   const result = await restoreHeldItems(

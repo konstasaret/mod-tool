@@ -13,7 +13,7 @@ This branch implements the Phase 1 demo: users may submit a post, but an unverif
 7. Devvit validates the proof binding, verifies it with World, stores the community-scoped result, applies flair, and restores the held post.
 8. Later posts from that verified user remain visible.
 
-Reddit moderators and Devvit app accounts are exempt. The trigger runs after submission, so this is enforced by quickly removing and restoring posts; Devvit cannot disable Reddit's composer before submission.
+Moderators are included in the POC gate so the flow can be tested with a moderator account. Devvit app accounts remain exempt so the verification portal stays visible. The trigger runs after submission, so this is enforced by quickly removing and restoring posts; Devvit cannot disable Reddit's composer before submission.
 
 ## Architecture
 

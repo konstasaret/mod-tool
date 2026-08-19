@@ -9,7 +9,6 @@ import { isEnabled } from '../core/config.js';
 import { shouldGateContent, type GatedContentType } from '../core/gating.js';
 import {
   ensurePortalPost,
-  isSubredditModerator,
   notifyUserOfRequest,
   type TargetAuthor,
 } from '../core/reddit.js';
@@ -20,8 +19,7 @@ export const triggers = new Hono();
 
 async function isExempt(author: UserV2): Promise<boolean> {
   // Devvit app accounts must be exempt so the verification portal stays visible.
-  if (author.accountType === 3) return true;
-  return isSubredditModerator(author.name);
+  return author.accountType === 3;
 }
 
 async function gateSubmission(input: {
