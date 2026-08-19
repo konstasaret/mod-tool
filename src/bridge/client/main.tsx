@@ -72,8 +72,8 @@ function App() {
   return (
     <main>
       <section className="panel">
-        <div className="globe">🌐</div>
-        <p className="eyebrow">WORLD ID · UNIQUE HUMAN</p>
+        <div className="wordmark" aria-label="World">WORLD</div>
+        <p className="eyebrow">UNIQUE HUMAN</p>
         <h1>
           {phase === 'success'
             ? 'You’re verified'

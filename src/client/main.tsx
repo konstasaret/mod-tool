@@ -186,8 +186,8 @@ function App() {
   return (
     <main className="page">
       <section className="card" aria-live="polite">
-        <div className="mark" aria-hidden="true">🌐</div>
-        <p className="eyebrow">WORLD ID · UNIQUE HUMAN</p>
+        <div className="wordmark" aria-label="World">WORLD</div>
+        <p className="eyebrow">UNIQUE HUMAN</p>
         <h1>Unlock your post</h1>
         <p className="lede">
           Complete a quick Selfie Check. We’ll publish your post and add your Human badge
