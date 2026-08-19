@@ -38,10 +38,10 @@ export async function ensurePortalPost(): Promise<string> {
   if (existing && existingVersion === context.appVersion) return existing;
   const post = await reddit.submitCustomPost({
     subredditName: context.subredditName,
-    title: 'Orb Human Badge',
+    title: 'World Human Check',
     entry: 'default',
     textFallback: {
-      text: 'Open this post in the current Reddit app to prove an Orb credential and receive a community human badge.',
+      text: 'Open this post in the current Reddit app to complete a community human check.',
     },
   });
   await setPortalPost(post.id, context.appVersion);
@@ -61,7 +61,7 @@ export async function notifyUserOfRequest(
     (await settings.get<string>('requestMessage'))?.trim() ||
     'A moderator has requested a privacy-preserving human check.';
   const gateNotice = heldContentType
-    ? `Your recent ${heldContentType} is temporarily hidden because this community requires a Human Check before posting or commenting. It will be restored automatically after a successful check.\n\n`
+    ? `Your recent ${heldContentType} is temporarily hidden because this community requires a Selfie Check before posting. It will be restored automatically after a successful check.\n\n`
     : '';
   await reddit.sendPrivateMessage({
     to: username,
@@ -78,38 +78,6 @@ export async function assignVerifiedFlair(username: string): Promise<void> {
     text: flairText,
     backgroundColor: '#2B6FF7',
     textColor: 'light',
-  });
-}
-
-export async function getHumanBadgeFlairText(): Promise<string> {
-  return (await settings.get<string>('humanBadgeFlairText'))?.trim() || ':unique_human: human';
-}
-
-export async function ensureHumanBadgeFlairTemplate(): Promise<string> {
-  const text = await getHumanBadgeFlairText();
-  const templates = await reddit.getUserFlairTemplates(context.subredditName);
-  const existing = templates.find((template) => template.text === text);
-  if (existing) return existing.id;
-
-  const created = await reddit.createUserFlairTemplate({
-    subredditName: context.subredditName,
-    text,
-    allowableContent: 'all',
-    maxEmojis: 1,
-    modOnly: true,
-    allowUserEdits: false,
-    backgroundColor: 'transparent',
-    textColor: 'dark',
-  });
-  return created.id;
-}
-
-export async function assignHumanBadgeFlair(username: string): Promise<void> {
-  const flairTemplateId = await ensureHumanBadgeFlairTemplate();
-  await reddit.setUserFlair({
-    subredditName: context.subredditName,
-    username,
-    flairTemplateId,
   });
 }
 

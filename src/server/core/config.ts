@@ -1,19 +1,13 @@
 import { settings } from '@devvit/web/server';
 import type { WorldEnvironment } from '../../shared/contracts.js';
 
-export type WorldConfig = {
+export type AppConfig = {
   appId: string;
   rpId: string;
   action: string;
-  humanBadgeAction: string;
   environment: WorldEnvironment;
   signingKey: string;
   signalSecret: string;
-};
-
-export type AppConfig = WorldConfig & {
-  bridgeBaseUrl: string;
-  bridgeApiToken: string;
 };
 
 async function requiredSetting(name: string): Promise<string> {
@@ -23,17 +17,13 @@ async function requiredSetting(name: string): Promise<string> {
   return trimmed;
 }
 
-export async function getWorldConfig(): Promise<WorldConfig> {
+export async function getAppConfig(): Promise<AppConfig> {
   const environment =
     (await settings.get<WorldEnvironment>('worldEnvironment')) ?? 'production';
-  const humanBadgeAction =
-    (await settings.get<string>('worldHumanBadgeAction'))?.trim() || 'reddit-human-selfie-v1';
-  const action = (await settings.get<string>('worldAction'))?.trim() || humanBadgeAction;
-  const config: WorldConfig = {
+  const config: AppConfig = {
     appId: await requiredSetting('worldAppId'),
     rpId: await requiredSetting('worldRpId'),
-    action,
-    humanBadgeAction,
+    action: (await settings.get<string>('worldAction'))?.trim() || 'reddit-human-selfie-v1',
     environment,
     signingKey: await requiredSetting('worldRpSigningKey'),
     signalSecret: await requiredSetting('signalHmacSecret'),
@@ -45,33 +35,6 @@ export async function getWorldConfig(): Promise<WorldConfig> {
   }
   if (config.signalSecret.length < 32) throw new Error('signalHmacSecret must be at least 32 characters');
   return config;
-}
-
-export async function getAppConfig(): Promise<AppConfig> {
-  const worldConfig = await getWorldConfig();
-  const config: AppConfig = {
-    ...worldConfig,
-    bridgeBaseUrl: (await requiredSetting('worldBridgeBaseUrl')).replace(/\/$/, ''),
-    bridgeApiToken: await requiredSetting('worldBridgeApiToken'),
-  };
-  if (config.bridgeApiToken.length < 32) {
-    throw new Error('worldBridgeApiToken must be at least 32 characters');
-  }
-  const bridgeUrl = new URL(config.bridgeBaseUrl);
-  if (bridgeUrl.protocol !== 'https:' || bridgeUrl.username || bridgeUrl.password) {
-    throw new Error('worldBridgeBaseUrl must be a credential-free HTTPS URL');
-  }
-  return config;
-}
-
-export async function isHumanBadgeConfigured(): Promise<boolean> {
-  try {
-    await getWorldConfig();
-    return true;
-  } catch (error) {
-    console.error('Human badge configuration is incomplete', error);
-    return false;
-  }
 }
 
 export async function isConfigured(): Promise<boolean> {

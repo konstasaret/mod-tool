@@ -1,6 +1,6 @@
 import { StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { IDKit, orbLegacy, selfieCheckLegacy } from '@worldcoin/idkit-core';
+import { IDKit, selfieCheckLegacy } from '@worldcoin/idkit-core';
 import type { BridgePublicSession, IdKitResponse } from '../../shared/contracts.js';
 import './styles.css';
 
@@ -30,9 +30,8 @@ function App() {
 
   const verify = async () => {
     if (!session) return;
-    const isHumanBadge = session.verificationLevel === 'orb';
     setPhase('waiting');
-    setMessage(isHumanBadge ? 'Waiting for World Orb verification…' : 'Waiting for World Selfie Check…');
+    setMessage('Waiting for World Selfie Check…');
     const worldWindow = window.open('', '_blank');
     if (worldWindow) worldWindow.opener = null;
     try {
@@ -43,11 +42,9 @@ function App() {
         allow_legacy_proofs: true,
         environment: session.environment,
       } as const;
-      const request = isHumanBadge
-        ? await IDKit.request(requestConfig).preset(orbLegacy({ signal: session.signal }))
-        : await IDKit.requestWithInviteCode(requestConfig).preset(
-            selfieCheckLegacy({ signal: session.signal })
-          );
+      const request = await IDKit.requestWithInviteCode(requestConfig).preset(
+        selfieCheckLegacy({ signal: session.signal })
+      );
 
       if (request.connectorURI) {
         if (!worldWindow) throw new Error('Allow pop-ups, then try again.');
@@ -63,11 +60,7 @@ function App() {
       });
       if (!response.ok) throw new Error('The proof returned, but Reddit did not accept it.');
       setPhase('success');
-      setMessage(
-        isHumanBadge
-          ? 'Proof sent. Your Reddit badge is being applied.'
-          : 'Proof sent. Your Reddit Human Check is being completed.'
-      );
+      setMessage('Proof sent. Return to Reddit while your held post is restored.');
       window.setTimeout(() => window.close(), 1200);
     } catch (error) {
       worldWindow?.close();
@@ -83,12 +76,8 @@ function App() {
         <p className="eyebrow">WORLD HUMAN CHECK</p>
         <h1>
           {phase === 'success'
-            ? session?.verificationLevel === 'orb'
-              ? 'Human badge verified'
-              : 'You’re Human Checked'
-            : session?.verificationLevel === 'orb'
-              ? 'Verify with your Orb credential'
-              : 'Complete Selfie Check'}
+            ? 'You’re Human Checked'
+            : 'Complete Selfie Check'}
         </h1>
         <p className={`message ${phase}`}>{message}</p>
         {phase === 'ready' && <button onClick={() => void verify()}>Continue with World</button>}

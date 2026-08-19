@@ -32,34 +32,3 @@ test('proof binding rejects another signal', () => {
     })
   );
 });
-
-test('proof binding accepts an Orb credential when Orb is required', () => {
-  assert.equal(
-    validateProofBinding({
-      proof: {
-        ...proof,
-        responses: [{ ...proof.responses[0], identifier: 'orb' }],
-      },
-      expectedAction: 'reddit-human-selfie-v1',
-      expectedSignal: signal,
-      expectedEnvironment: 'staging',
-      expectedIdentifier: 'orb',
-    }),
-    '0x123'
-  );
-});
-
-test('proof binding rejects a Selfie Check credential when Orb is required', () => {
-  assert.throws(() =>
-    validateProofBinding({
-      proof: {
-        ...proof,
-        responses: [{ ...proof.responses[0], identifier: 'face' }],
-      },
-      expectedAction: 'reddit-human-selfie-v1',
-      expectedSignal: signal,
-      expectedEnvironment: 'staging',
-      expectedIdentifier: 'orb',
-    })
-  );
-});

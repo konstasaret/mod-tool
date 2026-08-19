@@ -1,29 +1,16 @@
-# Orb Human Badge
+# World Selfie Check
 
-> A privacy-preserving `🌐 human` community badge for Orb-verified Reddit users.
+World Selfie Check lets a community require a privacy-preserving human check before a user's posts remain visible.
 
-Orb Human Badge lets a Reddit user prove that they already hold a World Orb credential and receive a visible flair in the subreddit where the app is installed.
+When an unverified user submits a post, the app temporarily removes it and sends the author a Reddit message. The author opens the community verification portal, chooses **Open Selfie Check**, and completes the check through World. After World verifies the result, the app restores the held post, applies community flair, and allows later posts from that user.
 
-This is a separate, self-service app. It does not replace or modify moderator-requested Selfie Check functionality in other apps.
-
-## How it works
-
-1. A moderator installs the app and opens **Orb Human Badge portal** from the subreddit menu.
-2. A user opens the portal and selects **Verify with World**.
-3. World proves the user's existing Orb credential.
-4. The app accepts only an `orb` credential response and assigns `🌐 human` flair.
-5. The user can unlink the badge and its app-held verification state.
-
-No new Orb visit is required for someone who is already Orb verified.
+The process is user-initiated: the check does not begin until the Reddit user opens the verification link and continues with World.
 
 ## Privacy
 
 - Reddit usernames are not sent to World.
-- The app does not receive or store biometric images.
-- World receives an opaque signal scoped to this app installation and community.
-- Verification and nullifier state are isolated to the app installation.
-- Users can remove their badge data from the portal.
+- The app does not receive or store selfies.
+- The app stores only the community-scoped verification and held-post state needed for this experience.
+- Users can unlink and delete their app-held verification state.
 
-## Community settings
-
-Moderators can disable the app or customize the human-badge flair text. The default flair is `🌐 human`.
+Selfie Check is a liveness check. It does not prove that a person is globally unique or has only one Reddit account.

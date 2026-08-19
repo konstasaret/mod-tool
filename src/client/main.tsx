@@ -1,77 +1,38 @@
 import { StrictMode, useCallback, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import type {
-  IdKitResponse,
-  PortalState,
-  StartVerificationResponse,
-} from '../shared/contracts.js';
+import type { IdKitResponse, PortalState, StartVerificationResponse } from '../shared/contracts.js';
 import './styles.css';
 
 type PendingBridge = {
-  url: string;
-  sessionId: string;
-  requestId: string;
+  launchUrl: string;
   expiresAt: number;
+  bridgeSessionId: string;
+  requestId: string;
 };
 
-function errorMessage(caught: unknown, fallback: string): string {
-  if (caught instanceof Error && caught.message) return caught.message;
-  if (typeof caught === 'string' && caught) return caught;
-  if (caught && typeof caught === 'object') {
-    for (const key of ['message', 'error', 'error_code', 'code'] as const) {
-      const value = (caught as Record<string, unknown>)[key];
-      if (typeof value === 'string' && value) return value;
-    }
-  }
-  return fallback;
-}
+type PollResponse =
+  | { status: 'pending' }
+  | { status: 'complete'; requestId: string; idkitResponse: IdKitResponse }
+  | { status: 'error'; error: string };
 
-type BridgeResult = {
-  status?: string;
-  requestId?: string;
-  idkitResponse?: IdKitResponse;
-};
-
-async function waitForBridgeProof(input: PendingBridge): Promise<IdKitResponse> {
-  while (Date.now() < input.expiresAt) {
-    const response = await fetch('/api/human-badge/poll', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        bridgeSessionId: input.sessionId,
-        requestId: input.requestId,
-      }),
-    });
-    if (response.ok) {
-      const result = (await response.json()) as BridgeResult;
-      if (result.requestId !== input.requestId || !result.idkitResponse) {
-        throw new Error('The bridge returned an invalid World proof.');
-      }
-      return result.idkitResponse;
-    }
-    if (response.status !== 202) {
-      throw new Error('The verification bridge session expired. Try again.');
-    }
-    await new Promise((resolve) => window.setTimeout(resolve, 1500));
-  }
-  throw new Error('World verification timed out. Try again.');
-}
+const delay = (milliseconds: number) =>
+  new Promise<void>((resolve) => window.setTimeout(resolve, milliseconds));
 
 function App() {
   const [state, setState] = useState<PortalState>();
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string>();
   const [pendingBridge, setPendingBridge] = useState<PendingBridge>();
+  const [error, setError] = useState<string>();
 
   const refresh = useCallback(async () => {
     setLoading(true);
     setError(undefined);
     try {
       const response = await fetch('/api/init');
-      if (!response.ok) throw new Error('Badge status could not be loaded.');
+      if (!response.ok) throw new Error('Status could not be loaded.');
       setState((await response.json()) as PortalState);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'Badge status could not be loaded.');
+      setError(caught instanceof Error ? caught.message : 'Status could not be loaded.');
     } finally {
       setLoading(false);
     }
@@ -81,151 +42,149 @@ function App() {
     void refresh();
   }, [refresh]);
 
+  useEffect(() => {
+    if (!pendingBridge) return;
+    let cancelled = false;
+
+    const poll = async () => {
+      try {
+        while (!cancelled && Date.now() < pendingBridge.expiresAt) {
+          const response = await fetch('/api/verification/poll', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({
+              bridgeSessionId: pendingBridge.bridgeSessionId,
+              requestId: pendingBridge.requestId,
+            }),
+          });
+          const result = (await response.json()) as PollResponse;
+          if (result.status === 'pending') {
+            await delay(1_500);
+            continue;
+          }
+          if (result.status === 'error') throw new Error(result.error);
+
+          const completion = await fetch('/api/verification/complete', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({
+              requestId: result.requestId,
+              idkitResponse: result.idkitResponse,
+            }),
+          });
+          const completionBody = (await completion.json()) as { ok?: boolean; error?: string };
+          if (!completion.ok || !completionBody.ok) {
+            throw new Error(completionBody.error || 'Reddit did not accept the World proof.');
+          }
+          if (!cancelled) {
+            setPendingBridge(undefined);
+            await refresh();
+          }
+          return;
+        }
+        if (!cancelled) throw new Error('Selfie Check expired. Start again.');
+      } catch (caught) {
+        if (!cancelled) {
+          setPendingBridge(undefined);
+          setError(caught instanceof Error ? caught.message : 'Verification did not complete.');
+        }
+      }
+    };
+
+    void poll();
+    return () => {
+      cancelled = true;
+    };
+  }, [pendingBridge, refresh]);
+
   const start = async () => {
     setLoading(true);
     setError(undefined);
-    setPendingBridge(undefined);
     try {
-      const response = await fetch('/api/human-badge/start', { method: 'POST' });
+      const response = await fetch('/api/verification/start', { method: 'POST' });
       const result = (await response.json()) as StartVerificationResponse;
       if (!result.ok) throw new Error(result.error);
-      if (
-        !('bridgeSessionId' in result) ||
-        !result.bridgeSessionId ||
-        !result.requestId ||
-        !result.launchUrl ||
-        !result.expiresAt
-      ) {
-        throw new Error('The verification bridge returned an invalid session.');
-      }
-      const pending = {
-        url: result.launchUrl,
-        sessionId: result.bridgeSessionId,
-        requestId: result.requestId,
-        expiresAt: result.expiresAt,
-      };
-      setPendingBridge(pending);
-      setLoading(false);
-      const idkitResponse = await waitForBridgeProof(pending);
-      setPendingBridge(undefined);
-      setLoading(true);
-      const completionResponse = await fetch('/api/human-badge/complete', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          requestId: result.requestId,
-          idkitResponse,
-        }),
-      });
-      if (!completionResponse.ok) throw new Error('Reddit did not accept the World proof.');
-      await refresh();
+      setPendingBridge(result);
     } catch (caught) {
-      console.error('Orb verification failed', caught);
-      setPendingBridge(undefined);
-      setError(errorMessage(caught, 'Orb verification could not start.'));
+      setError(caught instanceof Error ? caught.message : 'Verification could not start.');
     } finally {
       setLoading(false);
     }
   };
 
   const unlink = async () => {
-    if (!window.confirm('Remove your Orb-verified human badge from this community?')) return;
+    if (!window.confirm('Remove your Human Check state and matching flair from this community?')) return;
     setLoading(true);
     setError(undefined);
     try {
-      const response = await fetch('/api/human-badge/unlink', { method: 'POST' });
-      if (!response.ok) throw new Error('Human badge data could not be removed.');
+      const response = await fetch('/api/unlink', { method: 'POST' });
+      if (!response.ok) throw new Error('Human Check data could not be removed.');
       await refresh();
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'Human badge data could not be removed.');
+      setError(caught instanceof Error ? caught.message : 'Human Check data could not be removed.');
       setLoading(false);
     }
   };
 
   const canVerify =
-    state?.signedIn &&
-    state?.enabled &&
-    state.setupComplete &&
-    state.humanBadgeStatus !== 'verified' &&
-    !loading;
+    state?.signedIn && state.enabled && state.setupComplete && state.status === 'pending' && !loading;
 
   return (
     <main className="page">
       <section className="card" aria-live="polite">
         <div className="mark" aria-hidden="true">🌐</div>
-        <p className="eyebrow">ORB PROOF OF HUMAN</p>
-        <h1>Get your human badge</h1>
+        <p className="eyebrow">COMMUNITY SELFIE CHECK</p>
+        <h1>Prove you’re human to post</h1>
         <p className="lede">
-          Already verified at an Orb? Prove your existing World credential and receive a
-          <strong> 🌐 human</strong> flair in this community.
+          Your post is held until World Selfie Check confirms you are a unique human.
         </p>
 
-        <div className={`status status-${state?.humanBadgeStatus ?? 'loading'}`}>
+        <div className={`status status-${state?.status ?? 'loading'}`}>
           <strong>
             {loading && !state
               ? 'Loading…'
-              : state?.humanBadgeStatus === 'verified'
-                ? '✓ Orb-verified human'
-                : state?.humanBadgeStatus === 'pending'
-                  ? 'Orb verification started'
-                  : state?.humanBadgeStatus === 'failed'
-                    ? 'Orb verification did not complete'
-                    : 'Human badge not linked'}
+              : state?.status === 'verified'
+                ? '✓ Human Checked'
+                : state?.status === 'pending'
+                  ? 'Post held — Selfie Check required'
+                  : 'No active request'}
           </strong>
-          <span>
-            {state?.humanBadgeStatus === 'verified'
-              ? 'Your human badge is active for this community.'
-              : state && !state.signedIn
-                ? 'Sign in to Reddit to link your badge.'
-              : 'No new Orb visit is required.'}
-          </span>
+          <span>{state?.message}</span>
         </div>
 
         {!state?.setupComplete && state && (
-          <p className="notice">The app owner must finish the private World settings first.</p>
+          <p className="notice">A moderator must finish the app’s World setup before checks can start.</p>
         )}
         {error && <p className="error">{error}</p>}
 
-        {state?.humanBadgeStatus !== 'verified' && !pendingBridge && (
-          <button className="primary orb" disabled={!canVerify} onClick={() => void start()}>
-            {loading
-              ? 'Starting…'
-              : state?.humanBadgeStatus === 'pending'
-                ? 'Continue Orb verification'
-                : 'Verify with World'}
+        {state?.status === 'pending' && !pendingBridge && (
+          <button className="primary" disabled={!canVerify} onClick={() => void start()}>
+            {loading ? 'Preparing…' : 'Prepare Selfie Check'}
           </button>
         )}
         {pendingBridge && (
-          <>
-            <p className="notice">
-              Open the World page and keep this Reddit page open. Your badge will update
-              automatically.
-            </p>
-            <a
-              className="primary orb bridge-link"
-              href={pendingBridge.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              referrerPolicy="no-referrer"
-            >
-              Open World QR page
+          <div className="bridge-step">
+            <p>Open Selfie Check in a new tab, then keep this Reddit page open. It will update automatically.</p>
+            <a className="bridge-link" href={pendingBridge.launchUrl} target="_blank" rel="noreferrer">
+              Open Selfie Check
             </a>
-          </>
+            <span className="waiting">Waiting for completion…</span>
+          </div>
         )}
         <button className="secondary" disabled={loading} onClick={() => void refresh()}>
           Refresh status
         </button>
-        {state?.humanBadgeStatus === 'verified' && (
+        {state?.status === 'verified' && (
           <button className="link-button" disabled={loading} onClick={() => void unlink()}>
-            Remove my human badge
+            Remove my Human Check data
           </button>
         )}
 
         <div className="privacy">
           <strong>Privacy boundary</strong>
           <p>
-            Your Reddit username is not sent to World. The app sends an opaque,
-            community-scoped signal and stores badge state only for this app installation.
+            Your Reddit username is not sent to World. The app sends an opaque, community-scoped
+            signal and stores verification state only for this app installation.
           </p>
         </div>
       </section>

@@ -2,7 +2,7 @@
   "private": true,
   "name": "orb-human-badge",
   "version": "0.1.0",
-  "description": "Orb-verified human badge for Reddit Devvit.",
+  "description": "World Selfie Check post gating POC for Reddit Devvit.",
   "license": "UNLICENSED",
   "type": "module",
   "scripts": {

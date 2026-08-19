@@ -1,48 +1,66 @@
-# Orb Human Badge — Developer Guide
+# Reddit World Selfie Check POC
 
-Orb Human Badge is a standalone Reddit Devvit app that gives an Orb-verified user a `🌐 human` community flair. It uses a dedicated World relying party and a secret-free static IDKit bridge, while its Reddit app identity, settings, Redis records, portal, and flair lifecycle remain independent from `world-app`.
+This branch implements the Phase 1 demo: users may submit a post, but an unverified user's post is immediately removed and held until that user completes World Selfie Check.
 
-> Devvit uploads the root `README.md` as the app description. The protected npm commands temporarily substitute `REDDIT_README.md` during Devvit commands and restore this developer guide afterward.
+## Demo behavior
 
-## User flow
+1. A non-moderator submits a post.
+2. The Devvit post-submit trigger removes it and stores the post ID in per-install Redis.
+3. The app creates a pending Selfie Check request and sends the author a Reddit private message linking to the community portal.
+4. The portal creates a short-lived session on the external bridge and shows an explicit **Open Selfie Check** link.
+5. The external page runs IDKit and sends the user to World.
+6. The Reddit portal polls its own Devvit API; Devvit polls the bridge for the completed proof.
+7. Devvit validates the proof binding, verifies it with World, stores the community-scoped result, applies flair, and restores the held post.
+8. Later posts from that verified user remain visible.
 
-1. The app-install trigger creates one custom portal post.
-2. A signed-in user starts Orb verification from that portal.
-3. Devvit derives an opaque community-scoped signal and signs an RP context server-side.
-4. The GitHub Pages bridge launches IDKit with `orbLegacy`, renders the connector QR, and returns the proof to the originating WebView with a nonce-bound `postMessage`.
-5. Devvit validates action, environment, signal hash, and `identifier === "orb"`, then calls World's verification API.
-6. A successful proof stores installation-scoped badge/nullifier state and applies `🌐 human` flair.
-7. Unlink removes only this app's badge state, nullifier claim, and matching flair.
+Reddit moderators and Devvit app accounts are exempt. The trigger runs after submission, so this is enforced by quickly removing and restoring posts; Devvit cannot disable Reddit's composer before submission.
 
-The app exposes no Selfie Check request menus and no submission-gating triggers.
+## Architecture
+
+```text
+Reddit post -> Devvit trigger -> remove post + Redis pending request + private message
+                                      |
+                                      v
+Reddit portal -> Devvit API -> external bridge -> IDKit / World Selfie Check
+      ^                                |
+      |-------- Devvit polling --------|
+                       |
+                       v
+             World proof verification
+                       |
+                       v
+             verified state + flair + approve held post
+```
+
+The user's Reddit username and raw user ID remain inside Devvit. World receives an opaque HMAC-derived signal scoped to the subreddit installation and action.
 
 ## Components
 
-| Component | Responsibility |
+| Path | Responsibility |
 | --- | --- |
-| `src/client` | Reddit-hosted badge portal. |
-| `src/server` | Reddit identity, settings, RP signing, proof validation, Redis, and flair. |
-| [`reddit-orb-human-badge-bridge`](https://github.com/mustafakuloglu/reddit-orb-human-badge-bridge) | Static IDKit UI, connector QR, and proof handoff. |
-| `src/shared` | Contracts shared across clients and servers. |
+| `src/client/` | Reddit-hosted status and verification portal. |
+| `src/server/routes/triggers.ts` | Automatic post gate. |
+| `src/server/routes/api.ts` | Bridge session creation, polling, proof verification, and completion. |
+| `src/server/core/` | Settings, Redis state, privacy binding, Reddit actions, and World verification. |
+| `src/bridge/` | Externally hosted IDKit page and short-lived in-memory sessions. |
+| `devvit.json` | Devvit permissions, settings, menus, and post trigger. |
 
-## Private configuration
+## Configuration
 
-The new Devvit app needs these global settings:
+Devvit global settings:
 
-| Setting | Secret? | Purpose |
-| --- | --- | --- |
-| `worldAppId` | No | Existing World application ID. |
-| `worldRpId` | No | Existing World relying-party ID. |
-| `worldHumanBadgeAction` | No | Orb badge action. The POC can reuse `reddit-human-selfie-v1`. |
-| `worldEnvironment` | No | `production` or `staging`. |
-| `worldRpSigningKey` | Yes | Private key corresponding to the RP signer address. |
-| `signalHmacSecret` | Yes | Random value of at least 32 characters. |
-| `worldBridgeBaseUrl` | No | Legacy Selfie Check bridge origin; not used by the Orb badge. |
-| `worldBridgeApiToken` | Yes | Legacy Selfie Check bridge token; not used by the Orb badge. |
+- `worldAppId`
+- `worldRpId`
+- `worldAction` (defaults to `reddit-human-selfie-v1`)
+- `worldEnvironment`
+- `worldRpSigningKey` (secret)
+- `signalHmacSecret` (secret, at least 32 characters)
 
-The signer address alone is insufficient: IDKit requires a signed RP context, so the corresponding private signing key must be configured in Devvit.
+World Human Check and the post gate are enabled by default. Moderators can customize the applied flair and private-message copy.
 
-## Development
+The bridge uses `BRIDGE_PUBLIC_BASE_URL`, `BRIDGE_API_TOKEN`, and the host-provided `PORT`. The token remains required for compatibility with older callback sessions; this POC's polling session route does not use it.
+
+## Validation
 
 ```bash
 npm ci
@@ -50,20 +68,13 @@ npm run check
 npm run build
 ```
 
-Upload the private app with:
+## Deployment boundary
 
-```bash
-npm run upload -- --bump patch
-```
+The app requires outbound access from Devvit to:
 
-The Orb bridge is deployed separately on GitHub Pages. It is entirely static and receives its short-lived request through the URL fragment, which is not sent to the Pages server.
+- `mod-tool.onrender.com` for bridge session creation and polling.
+- `developer.world.org` for final proof verification.
 
-## Security boundaries
+The external browser handoff still requires Reddit approval/allowlisting for a real installation. The bridge stores live sessions in memory, so a restart expires active verification attempts; that is acceptable for this POC but not production-ready.
 
-- No Reddit username or raw user ID leaves Devvit.
-- RP signing and HMAC derivation remain server-side.
-- The bridge contains no signing key, callback token, or persistent storage. Its proof handoff is bound to the opener, exact origins, request ID, and a random nonce.
-- The callback requires a World-verified proof bound to the expected action, signal, environment, and Orb credential identifier.
-- Nullifiers prevent one Orb credential from claiming this badge for multiple Reddit users inside an installation.
-
-Never commit signing keys, HMAC secrets, bridge tokens, or deployment-hook credentials.
+Do not upload a Devvit version, deploy the bridge, push the branch, or open a PR without explicit approval.

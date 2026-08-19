@@ -1,7 +1,6 @@
 import { Hono } from 'hono';
 import { context, reddit, settings } from '@devvit/web/server';
 import type {
-  OnCommentSubmitRequest,
   OnPostSubmitRequest,
   TriggerResponse,
   UserV2,
@@ -15,7 +14,7 @@ import {
   type TargetAuthor,
 } from '../core/reddit.js';
 import { ensureHumanCheckRequest } from '../core/requests.js';
-import { getHumanBadgeUser, getVerifiedUser, holdContent } from '../core/state.js';
+import { getVerifiedUser, holdContent } from '../core/state.js';
 
 export const triggers = new Hono();
 
@@ -33,24 +32,21 @@ async function gateSubmission(input: {
   const { author, contentId, contentType } = input;
   if (!author?.id || !author.name || !contentId) return;
 
-  const settingName =
-    contentType === 'post' ? 'requireVerificationForPosts' : 'requireVerificationForComments';
   const [appEnabled, gateEnabled] = await Promise.all([
     isEnabled(),
-    settings.get<boolean>(settingName).then((value) => value ?? false),
+    settings.get<boolean>('requireVerificationForPosts').then((value) => value ?? true),
   ]);
   if (!appEnabled || !gateEnabled) return;
 
-  const [verified, humanBadge, exempt] = await Promise.all([
+  const [verified, exempt] = await Promise.all([
     getVerifiedUser(author.id),
-    getHumanBadgeUser(author.id),
     isExempt(author),
   ]);
   if (
     !shouldGateContent({
       appEnabled,
       gateEnabled,
-      verified: Boolean(verified || humanBadge),
+      verified: Boolean(verified),
       exempt,
     })
   ) {
@@ -84,6 +80,22 @@ async function gateSubmission(input: {
   }
 }
 
+triggers.post('/on-app-install', async (c) => {
+  try {
+    const postId = await ensurePortalPost();
+    return c.json<TriggerResponse>({
+      status: 'success',
+      message: `World Human Check portal created (${postId}).`,
+    });
+  } catch (error) {
+    console.error('App install portal creation failed', error);
+    return c.json<TriggerResponse>(
+      { status: 'error', message: 'Installed, but the verification portal could not be created.' },
+      500
+    );
+  }
+});
+
 triggers.post('/on-post-submit', async (c) => {
   try {
     const input = await c.req.json<OnPostSubmitRequest>();
@@ -94,20 +106,6 @@ triggers.post('/on-post-submit', async (c) => {
     });
   } catch (error) {
     console.error(`Post gate failed in r/${context.subredditName}`, error);
-  }
-  return c.json<TriggerResponse>({});
-});
-
-triggers.post('/on-comment-submit', async (c) => {
-  try {
-    const input = await c.req.json<OnCommentSubmitRequest>();
-    await gateSubmission({
-      contentId: input.comment?.id ?? '',
-      contentType: 'comment',
-      author: input.author,
-    });
-  } catch (error) {
-    console.error(`Comment gate failed in r/${context.subredditName}`, error);
   }
   return c.json<TriggerResponse>({});
 });

@@ -34,7 +34,8 @@ function authenticated(header: string | undefined): boolean {
   return timingSafeEqual(Buffer.from(supplied), Buffer.from(apiToken));
 }
 
-function validDevvitCallback(value: string): boolean {
+function validDevvitCallback(value: string | undefined): boolean {
+  if (!value) return false;
   try {
     const url = new URL(value);
     return (
@@ -58,8 +59,7 @@ function validSession(input: Omit<BridgeSessionInput, 'callbackUrl'>): boolean {
       ['production', 'staging'].includes(input.environment) &&
       input.rpContext?.rp_id === input.rpId &&
       Number.isFinite(input.rpContext?.expires_at) &&
-      (input.verificationLevel === undefined ||
-        ['selfie', 'orb'].includes(input.verificationLevel))
+      (input.verificationLevel === undefined || input.verificationLevel === 'selfie')
   );
 }
 
@@ -167,7 +167,7 @@ app.use('/*', serveStatic({ root: './dist/bridge-client' }));
 const cleanup = setInterval(() => {
   const now = Date.now();
   for (const [id, session] of sessions) {
-    if (session.completed || session.expiresAt <= now) sessions.delete(id);
+    if (session.expiresAt <= now) sessions.delete(id);
   }
 }, 60_000);
 cleanup.unref();
