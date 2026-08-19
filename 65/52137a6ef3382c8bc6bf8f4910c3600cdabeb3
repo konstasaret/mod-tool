@@ -1,0 +1,21 @@
+src/bridge/server.ts
+  s_67e70ea6c3a04f::t_f39253ad9238c5 67
+src/client/main.tsx
+  s_67e70ea6c3a04f::t_f39253ad9238c5 39-47,97-106
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "6552137a6ef3382c8bc6bf8f4910c3600cdabeb3",
+  "prompts": {},
+  "sessions": {
+    "s_67e70ea6c3a04f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0165e-29b1-73f3-b453-f87c60d055d7",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "mustafakuloglu <mustafakuloglunun@gmail.com>"
+    }
+  }
+}
