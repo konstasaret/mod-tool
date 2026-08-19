@@ -36,10 +36,15 @@ type BridgeResult = {
 
 async function waitForBridgeProof(input: PendingBridge): Promise<IdKitResponse> {
   while (Date.now() < input.expiresAt) {
-    const response = await fetch(
-      `${WORLD_BRIDGE_ORIGIN}/api/polling-sessions/${encodeURIComponent(input.sessionId)}/result`,
-      { cache: 'no-store' }
-    );
+    let response: Response;
+    try {
+      response = await fetch(
+        `${WORLD_BRIDGE_ORIGIN}/api/polling-sessions/${encodeURIComponent(input.sessionId)}/result`,
+        { cache: 'no-store' }
+      );
+    } catch {
+      throw new Error('Reddit could not poll the verification bridge.');
+    }
     if (response.ok) {
       const result = (await response.json()) as BridgeResult;
       if (result.requestId !== input.requestId || !result.idkitResponse) {
@@ -89,11 +94,16 @@ function App() {
       if (!result.ok) throw new Error(result.error);
       if (!('session' in result)) throw new Error('World verification session was not returned.');
       const { session } = result;
-      const bridgeResponse = await fetch(`${WORLD_BRIDGE_ORIGIN}/api/polling-sessions`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(session),
-      });
+      let bridgeResponse: Response;
+      try {
+        bridgeResponse = await fetch(`${WORLD_BRIDGE_ORIGIN}/api/polling-sessions`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(session),
+        });
+      } catch {
+        throw new Error('Reddit could not reach the verification bridge.');
+      }
       if (!bridgeResponse.ok) throw new Error('The verification bridge could not start.');
       const bridge = (await bridgeResponse.json()) as {
         sessionId?: string;
