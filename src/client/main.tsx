@@ -2,6 +2,7 @@ import { StrictMode, useCallback, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { navigateTo } from '@devvit/web/client';
 import type { IdKitResponse, PortalState, StartVerificationResponse } from '../shared/contracts.js';
+import { VERIFICATION_BADGE_DATA_URL } from '../shared/verificationBadge.js';
 import './styles.css';
 
 const WORLD_BRIDGE_ORIGIN = 'https://mod-tool.onrender.com';
@@ -193,14 +194,14 @@ function App() {
         ? 'Unlock your post'
         : state?.status === 'failed'
           ? 'Verification expired'
-        : 'World verification';
+        : 'Selfie Check';
   const description =
     !state
       ? 'Checking your status…'
       : state.status === 'verified'
         ? 'You can post in this community.'
         : state.status === 'pending'
-          ? 'Verify with World to publish your post.'
+          ? 'Complete Selfie Check to publish your post.'
           : state.status === 'failed'
             ? 'Ask a moderator for a new verification link.'
           : 'Post in this community to get started.';
@@ -208,18 +209,18 @@ function App() {
   return (
     <main className="page">
       <section className="card" aria-live="polite">
-        <div className="wordmark" aria-label="World">WORLD</div>
+        <div className="brand"><img src={VERIFICATION_BADGE_DATA_URL} alt="" /><span>WORLD</span></div>
         <h1>{heading}</h1>
         <p className="lede">{description}</p>
 
         {!state?.setupComplete && state && (
-          <p className="notice">World verification isn’t available yet. Please let a moderator know.</p>
+          <p className="notice">Selfie Check isn’t available yet. Please let a moderator know.</p>
         )}
         {error && <p className="error">{error}</p>}
 
         {state?.status === 'pending' && !pendingBridge && (
           <button className="primary" disabled={!canVerify} onClick={() => void start()}>
-            {loading ? 'Opening World…' : 'Verify & publish my post'}
+            {loading ? 'Opening Selfie Check…' : 'Complete Selfie Check'}
           </button>
         )}
         {pendingBridge && (

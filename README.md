@@ -1,13 +1,13 @@
-# Reddit World Verification POC
+# Reddit World Selfie Check POC
 
-This branch implements the Phase 1 demo: users may submit a post, but an unverified user's post is immediately removed and held until that user completes World verification.
+This branch implements the Phase 1 demo: users may submit a post, but an unverified user's post is immediately removed and held until that user completes World Selfie Check.
 
 ## Demo behavior
 
 1. A non-moderator submits a post.
 2. The Devvit post-submit trigger removes it and stores the post ID in per-install Redis.
-3. The app creates a pending World verification request and sends the author a Reddit private message linking to the community portal.
-4. The portal creates a short-lived session on the external bridge and opens the World verification page.
+3. The app creates a pending Selfie Check request and sends the author a Reddit private message linking to the community portal.
+4. The portal creates a short-lived session on the external bridge and opens the Selfie Check page.
 5. The external page runs IDKit and sends the user to World.
 6. The Reddit portal polls its own Devvit API; Devvit polls the bridge for the completed proof.
 7. Devvit validates the proof binding, verifies it with World, stores the community-scoped result, and restores the held post.
@@ -21,7 +21,7 @@ Moderators are included in the POC gate so the flow can be tested with a moderat
 Reddit post -> Devvit trigger -> remove post + Redis pending request + private message
                                       |
                                       v
-Reddit portal -> Devvit API -> external bridge -> IDKit / World verification
+Reddit portal -> Devvit API -> external bridge -> IDKit / World Selfie Check
       ^                                |
       |-------- Devvit polling --------|
                        |
@@ -56,7 +56,7 @@ Devvit global settings:
 - `worldRpSigningKey` (secret)
 - `signalHmacSecret` (secret, at least 32 characters)
 
-The post gate is always active while World verification is enabled. Moderators can customize the private-message copy.
+The post gate is always active while Selfie Check is enabled. Moderators can customize the private-message copy.
 
 The bridge uses `BRIDGE_PUBLIC_BASE_URL`, `BRIDGE_API_TOKEN`, and the host-provided `PORT`. The token remains required for compatibility with older callback sessions; this POC's polling session route does not use it.
 

@@ -74,42 +74,42 @@
     "subreddit": {
       "enabled": {
         "type": "boolean",
-        "label": "Enable World Human Check",
+        "label": "Enable World Selfie Check",
         "defaultValue": true
       },
       "requestMessage": {
         "type": "paragraph",
         "label": "Verification request message",
-        "defaultValue": "Verify with World to unlock posting."
+        "defaultValue": "Complete Selfie Check to unlock posting."
       }
     }
   },
   "menu": {
     "items": [
       {
-        "label": "Open World verification",
-        "description": "Open the community page for World verification.",
+        "label": "Open Selfie Check",
+        "description": "Open the community page for Selfie Check.",
         "location": "subreddit",
         "forUserType": "moderator",
         "endpoint": "/internal/menu/open-portal"
       },
       {
-        "label": "Reset my World verification",
-        "description": "Clear your test verification so your next post is held again.",
+        "label": "Reset my Selfie Check",
+        "description": "Clear verification and any legacy badge so your next post is held again.",
         "location": "subreddit",
         "forUserType": "moderator",
         "endpoint": "/internal/menu/reset-my-verification"
       },
       {
-        "label": "Request Human Check",
-        "description": "Request World verification from this post or comment author.",
+        "label": "Request Selfie Check",
+        "description": "Request Selfie Check from this post or comment author.",
         "location": ["post", "comment"],
         "forUserType": "moderator",
         "endpoint": "/internal/menu/request-human-check"
       },
       {
-        "label": "View Human Check status",
-        "description": "Show this author's community-scoped verification status.",
+        "label": "View Selfie Check status",
+        "description": "Show this author's community-scoped Selfie Check status.",
         "location": ["post", "comment"],
         "forUserType": "moderator",
         "endpoint": "/internal/menu/view-status"

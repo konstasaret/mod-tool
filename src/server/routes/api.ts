@@ -9,7 +9,7 @@ import type {
 import { getAppConfig, isConfigured, isEnabled } from '../core/config.js';
 import { deriveOpaqueSignal } from '../core/privacy.js';
 import { isDevvitDomainPermissionDenied } from '../core/pocFallback.js';
-import { restoreHeldContent } from '../core/reddit.js';
+import { removeLegacyHumanBadgeFlair, restoreHeldContent } from '../core/reddit.js';
 import {
   claimNullifier,
   clearBridgeSession,
@@ -106,7 +106,7 @@ api.get('/init', async (c) => {
 api.post('/verification/start', async (c) => {
   try {
     if (!(await isEnabled())) {
-      return c.json<StartVerificationResponse>({ ok: false, error: 'Human Check is disabled.' }, 400);
+      return c.json<StartVerificationResponse>({ ok: false, error: 'Selfie Check is disabled.' }, 400);
     }
     if (!context.userId) {
       return c.json<StartVerificationResponse>({ ok: false, error: 'Sign in to Reddit first.' }, 401);
@@ -114,7 +114,7 @@ api.post('/verification/start', async (c) => {
     const request = await getPendingRequestForUser(context.userId);
     if (!request || request.status !== 'pending') {
       return c.json<StartVerificationResponse>(
-        { ok: false, error: 'No pending World verification was found.' },
+        { ok: false, error: 'No pending Selfie Check was found.' },
         404
       );
     }
@@ -149,7 +149,7 @@ api.post('/verification/start', async (c) => {
       signal,
       rpContext,
       environment: config.environment,
-      verificationLevel: 'proof_of_human',
+      verificationLevel: 'selfie',
       expiresAt: rpContext.expires_at * 1000,
     };
     let bridge: BridgeLaunch;
@@ -178,7 +178,7 @@ api.post('/verification/start', async (c) => {
   } catch (error) {
     console.error('Verification start failed', error);
     return c.json<StartVerificationResponse>(
-      { ok: false, error: 'World verification could not start. Ask a moderator to check app setup.' },
+      { ok: false, error: 'Selfie Check could not start. Ask a moderator to check app setup.' },
       500
     );
   }
@@ -267,7 +267,17 @@ api.post('/verification/complete', async (c) => {
 
 api.post('/unlink', async (c) => {
   if (!context.userId) return c.json({ ok: false, error: 'Sign in to Reddit first.' }, 401);
-  const removed = Boolean(await unlinkUser(context.userId));
-  console.log('Portal verification reset', { removed });
-  return c.json({ ok: true, removed });
+  const verificationRemoved = Boolean(await unlinkUser(context.userId));
+  let badgeRemoved: boolean;
+  try {
+    badgeRemoved = await removeLegacyHumanBadgeFlair(context.userId);
+  } catch (error) {
+    console.error('Portal legacy badge removal failed', error);
+    return c.json(
+      { ok: false, error: 'Verification was reset, but the legacy badge could not be removed.' },
+      500
+    );
+  }
+  console.log('Portal verification reset', { verificationRemoved, badgeRemoved });
+  return c.json({ ok: true, removed: verificationRemoved || badgeRemoved, badgeRemoved });
 });

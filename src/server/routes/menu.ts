@@ -7,6 +7,7 @@ import {
   getTargetAuthor,
   notifyUserOfRequest,
   portalUrl,
+  removeLegacyHumanBadgeFlair,
 } from '../core/reddit.js';
 import { humanCheckStatusMessage } from '../core/gating.js';
 import { ensureHumanCheckRequest } from '../core/requests.js';
@@ -27,7 +28,7 @@ menu.post('/open-portal', async (c) => {
 menu.post('/request-human-check', async (c) => {
   try {
     if (!(await isEnabled())) {
-      return c.json<UiResponse>({ showToast: 'World Human Check is disabled in app settings.' }, 400);
+      return c.json<UiResponse>({ showToast: 'World Selfie Check is disabled in app settings.' }, 400);
     }
     const input = await c.req.json<MenuItemRequest>();
     if (input.location === 'subreddit') {
@@ -45,12 +46,12 @@ menu.post('/request-human-check', async (c) => {
 
     return c.json<UiResponse>({
       showToast: created
-        ? 'Human Check requested. The author received a private Reddit message.'
-        : 'Human Check is already pending. A reminder was sent to the author.',
+        ? 'Selfie Check requested. The author received a private Reddit message.'
+        : 'Selfie Check is already pending. A reminder was sent to the author.',
     });
   } catch (error) {
-    console.error('Human Check request failed', error);
-    return c.json<UiResponse>({ showToast: 'Could not request a Human Check.' }, 500);
+    console.error('Selfie Check request failed', error);
+    return c.json<UiResponse>({ showToast: 'Could not request Selfie Check.' }, 500);
   }
 });
 
@@ -73,8 +74,8 @@ menu.post('/view-status', async (c) => {
       }),
     });
   } catch (error) {
-    console.error('Human Check status lookup failed', error);
-    return c.json<UiResponse>({ showToast: 'Could not load Human Check status.' }, 500);
+    console.error('Selfie Check status lookup failed', error);
+    return c.json<UiResponse>({ showToast: 'Could not load Selfie Check status.' }, 500);
   }
 });
 
@@ -83,12 +84,23 @@ menu.post('/reset-my-verification', async (c) => {
     if (!context.userId) {
       return c.json<UiResponse>({ showToast: 'Sign in to Reddit first.' }, 401);
     }
-    const removed = Boolean(await unlinkUser(context.userId));
-    console.log('Moderator verification reset', { removed });
+    const verificationRemoved = Boolean(await unlinkUser(context.userId));
+    let badgeRemoved: boolean;
+    try {
+      badgeRemoved = await removeLegacyHumanBadgeFlair(context.userId);
+    } catch (error) {
+      console.error('Moderator legacy badge removal failed', error);
+      return c.json<UiResponse>(
+        { showToast: 'Verification was reset, but the legacy badge could not be removed.' },
+        500
+      );
+    }
+    console.log('Moderator verification reset', { verificationRemoved, badgeRemoved });
     return c.json<UiResponse>({
-      showToast: removed
-        ? 'Your verification was reset. Your next post will require verification.'
-        : 'No verification was stored for this Reddit account.',
+      showToast:
+        verificationRemoved || badgeRemoved
+          ? `${verificationRemoved ? 'Verification reset.' : 'No verification was stored.'}${badgeRemoved ? ' Legacy badge removed.' : ''} Your next post will require Selfie Check.`
+          : 'No verification or legacy badge was stored for this Reddit account.',
     });
   } catch (error) {
     console.error('Moderator verification reset failed', error);

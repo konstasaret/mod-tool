@@ -25,7 +25,8 @@ button { font: inherit; }
   background: #fff;
 }
 
-.wordmark { margin-bottom: 18px; font-size: 12px; font-weight: 900; letter-spacing: -0.04em; }
+.brand { display: flex; align-items: center; gap: 8px; margin-bottom: 18px; font-size: 12px; font-weight: 900; letter-spacing: -0.04em; }
+.brand img { width: 28px; height: 28px; }
 h1 { margin: 0; font-size: 27px; font-weight: 600; letter-spacing: -0.035em; line-height: 1.05; }
 .lede { margin: 8px 0 18px; color: #5f5d56; font-size: 14px; line-height: 1.4; }
 

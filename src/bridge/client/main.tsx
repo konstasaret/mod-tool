@@ -1,8 +1,9 @@
 import { StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { IDKit, proofOfHuman } from '@worldcoin/idkit-core';
+import { IDKit, selfieCheckLegacy } from '@worldcoin/idkit-core';
 import QRCode from 'qrcode';
 import type { BridgePublicSession, IdKitResponse } from '../../shared/contracts.js';
+import { VERIFICATION_BADGE_DATA_URL } from '../../shared/verificationBadge.js';
 import './styles.css';
 
 const sessionId = window.location.pathname.split('/').filter(Boolean).at(-1) ?? '';
@@ -26,9 +27,9 @@ function App() {
           app_id: session.appId as `app_${string}`,
           action: session.action,
           rp_context: session.rpContext,
-          allow_legacy_proofs: true,
+          allow_legacy_proofs: false,
           environment: session.environment,
-        }).preset(proofOfHuman({ signal: session.signal }));
+        }).preset(selfieCheckLegacy({ signal: session.signal }));
         if (!request.connectorURI) {
           throw new Error('World did not return a QR connector. Please try again.');
         }
@@ -81,14 +82,14 @@ function App() {
   return (
     <main>
       <section className="panel">
-        <div className="wordmark" aria-label="World">WORLD</div>
-        <p className="eyebrow">UNIQUE HUMAN</p>
+        <div className="brand"><img src={VERIFICATION_BADGE_DATA_URL} alt="" /><span>WORLD</span></div>
+        <p className="eyebrow">SELFIE CHECK</p>
         <h1>
           {phase === 'success'
             ? 'You’re verified'
             : phase === 'waiting'
-              ? 'Scan to verify'
-              : 'Verify to post'}
+              ? 'Scan for Selfie Check'
+              : 'Selfie Check to post'}
         </h1>
         <p className={`message ${phase}`}>{message}</p>
         {qrCode && (

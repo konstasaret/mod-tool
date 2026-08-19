@@ -174,5 +174,5 @@ const cleanup = setInterval(() => {
 cleanup.unref();
 
 serve({ fetch: app.fetch, port }, ({ port: listeningPort }) => {
-  console.log(`World Human Check bridge listening on ${listeningPort}`);
+  console.log(`World Selfie Check bridge listening on ${listeningPort}`);
 });

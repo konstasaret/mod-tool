@@ -12,7 +12,7 @@ Submit these before a public pilot:
 
 ## Reviewer explanation
 
-`world-human-check` automatically holds posts from unverified users and also lets a moderator manually request World verification from a post or comment author. The user must opt in from a community portal. The app does not send Reddit content, usernames, profile images, or raw Reddit user IDs to an external service. It sends an installation-scoped HMAC value that cannot be reversed without a Devvit-held secret. World returns a cryptographic proof; Devvit verifies it server-side, stores state in installation-scoped Redis, restores held posts, and allows later posts from that user.
+`world-human-check` automatically holds posts from unverified users and also lets a moderator manually request Selfie Check from a post or comment author. The user must opt in from a community portal. The app does not send Reddit content, usernames, profile images, or raw Reddit user IDs to an external service. It sends an installation-scoped HMAC value that cannot be reversed without a Devvit-held secret. World returns a cryptographic proof; Devvit verifies it server-side, stores state in installation-scoped Redis, restores held posts, and allows later posts from that user.
 
 The external bridge exists because Devvit webviews cannot make external client requests. Devvit sends its one-time callback URL to the trusted bridge server-to-server; the callback token is never exposed in the Reddit webview or to the user. Bridge sessions expire after 10 minutes and are deleted after use.
 

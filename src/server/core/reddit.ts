@@ -8,6 +8,7 @@ import {
   removeHeldContent,
   setPortalPost,
 } from './state.js';
+import { isLegacyHumanBadgeFlair } from './legacyFlair.js';
 
 export type TargetAuthor = {
   userId: string;
@@ -59,15 +60,24 @@ export async function notifyUserOfRequest(
 ): Promise<void> {
   const requestMessage =
     (await settings.get<string>('requestMessage'))?.trim() ||
-    'Verify with World to unlock posting.';
+    'Complete Selfie Check to unlock posting.';
   const gateNotice = heldContentType
-    ? `Your ${heldContentType} is waiting—not deleted. Verify with World and we’ll publish it automatically.\n\n`
+    ? `Your ${heldContentType} is waiting—not deleted. Complete Selfie Check and we’ll publish it automatically.\n\n`
     : '';
   await reddit.sendPrivateMessage({
     to: username,
     subject: `Unlock your post in r/${context.subredditName}`,
     text: `${gateNotice}${requestMessage}\n\n[Verify & publish my post](${portalUrl(postId)})`,
   });
+}
+
+export async function removeLegacyHumanBadgeFlair(userId: string): Promise<boolean> {
+  const user = await reddit.getUserById(userId as `t2_${string}`);
+  if (!user) return false;
+  const flair = await user.getUserFlairBySubreddit(context.subredditName);
+  if (!isLegacyHumanBadgeFlair(flair?.flairText)) return false;
+  await reddit.removeUserFlair(context.subredditName, user.username);
+  return true;
 }
 
 export async function restoreHeldContent(userId: string): Promise<void> {

@@ -11,7 +11,7 @@ The Devvit installation is the only component that knows both the Reddit account
 | Devvit Redis (installation-scoped) | Reddit user ID, Reddit username, source post/comment ID, request status/time, verification level, World nullifier, portal post ID | Pending requests: 24 hours. Verified state/nullifier: until the user unlinks or app data is removed. |
 | Verification bridge | Random request ID, opaque HMAC signal, public `app_id`/`rp_id`/action/environment, signed RP context, one-time Devvit callback URL, returned IDKit proof | In memory for at most 10 minutes; deleted immediately after successful callback. No Reddit identifiers. |
 | World | Public RP/action context, opaque HMAC signal, World proof request | Per World platform policy. No Reddit username or raw Reddit ID is sent by this app. |
-| Reddit API | Username for Reddit private-message delivery and flair assignment | Remains inside Reddit/Devvit. |
+| Reddit API | Username for Reddit private-message delivery and removal of legacy app-issued flair | Remains inside Reddit/Devvit. |
 
 ## Opaque signal
 
@@ -44,7 +44,7 @@ Devvit accepts a result only after all of these checks succeed:
 
 ## User control
 
-The portal includes **Remove my Human Check data**. It deletes the per-install request, verified state, and nullifier mapping immediately. If the current user flair exactly matches the configured Human Check flair, the app removes it as well.
+The portal includes **Remove verification**. It deletes the per-install request, verified state, and nullifier mapping immediately. It also removes a flair only when its text exactly matches a legacy badge value previously issued by this app.
 
 There is no long-lived Reddit mapping in the bridge. Expired bridge sessions are purged automatically.
 

@@ -61,10 +61,10 @@ export function humanCheckStatusMessage(input: {
     const suffix = input.requestedAt
       ? ` since ${new Date(input.requestedAt).toLocaleDateString()}`
       : '';
-    return `Human Check pending${suffix}.`;
+    return `Selfie Check pending${suffix}.`;
   }
   if (input.requestStatus === 'failed') {
-    return 'The last Human Check failed. Issue a new request to try again.';
+    return 'The last Selfie Check failed. Issue a new request to try again.';
   }
-  return 'No completed Human Check exists for this author in this community.';
+  return 'No completed Selfie Check exists for this author in this community.';
 }

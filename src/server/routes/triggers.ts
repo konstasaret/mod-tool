@@ -32,7 +32,7 @@ async function gateSubmission(input: {
 
   const appEnabled = await isEnabled();
   if (!appEnabled) {
-    console.log('Post gate skipped because World Human Check is disabled');
+    console.log('Post gate skipped because World Selfie Check is disabled');
     return;
   }
 
@@ -63,7 +63,7 @@ async function gateSubmission(input: {
   }
 
   await reddit.remove(contentId as `t1_${string}` | `t3_${string}`, false);
-  console.log('Post removed pending World verification');
+  console.log('Post removed pending Selfie Check');
   try {
     const held = await holdContent(author.id, {
       id: contentId,
@@ -88,7 +88,7 @@ triggers.post('/on-app-install', async (c) => {
     const postId = await ensurePortalPost();
     return c.json<TriggerResponse>({
       status: 'success',
-      message: `World Human Check portal created (${postId}).`,
+      message: `World Selfie Check portal created (${postId}).`,
     });
   } catch (error) {
     console.error('App install portal creation failed', error);
