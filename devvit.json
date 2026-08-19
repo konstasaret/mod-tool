@@ -22,6 +22,10 @@
     }
   },
   "permissions": {
+    "http": {
+      "enable": true,
+      "domains": ["mod-tool.onrender.com"]
+    },
     "redis": true,
     "reddit": {
       "enable": true,

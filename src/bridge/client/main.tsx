@@ -65,9 +65,10 @@ function App() {
       setPhase('success');
       setMessage(
         isHumanBadge
-          ? 'Human badge verified. Return to Reddit and refresh your status.'
-          : 'Human Check complete. Return to Reddit and refresh your status.'
+          ? 'Proof sent. Your Reddit badge is being applied.'
+          : 'Proof sent. Your Reddit Human Check is being completed.'
       );
+      window.setTimeout(() => window.close(), 1200);
     } catch (error) {
       worldWindow?.close();
       setPhase('error');

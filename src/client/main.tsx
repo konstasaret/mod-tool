@@ -7,20 +7,13 @@ import type {
 } from '../shared/contracts.js';
 import './styles.css';
 
-const WORLD_BRIDGE_ORIGIN = 'https://mustafakuloglu.github.io';
-const WORLD_BRIDGE_URL = `${WORLD_BRIDGE_ORIGIN}/reddit-orb-human-badge-bridge/`;
-
-type BridgeProofMessage = {
-  type?: string;
-  nonce?: string;
-  requestId?: string;
-  idkitResponse?: IdKitResponse;
-};
+const WORLD_BRIDGE_ORIGIN = 'https://mod-tool.onrender.com';
 
 type PendingBridge = {
   url: string;
-  nonce: string;
+  sessionId: string;
   requestId: string;
+  expiresAt: number;
 };
 
 function errorMessage(caught: unknown, fallback: string): string {
@@ -35,42 +28,31 @@ function errorMessage(caught: unknown, fallback: string): string {
   return fallback;
 }
 
-function waitForBridgeProof(input: {
-  nonce: string;
-  requestId: string;
-}): Promise<IdKitResponse> {
-  return new Promise((resolve, reject) => {
-    let timeoutId = 0;
+type BridgeResult = {
+  status?: string;
+  requestId?: string;
+  idkitResponse?: IdKitResponse;
+};
 
-    const cleanup = () => {
-      window.removeEventListener('message', handleMessage);
-      window.clearTimeout(timeoutId);
-    };
-    const fail = (message: string) => {
-      cleanup();
-      reject(new Error(message));
-    };
-    const handleMessage = (event: MessageEvent<BridgeProofMessage>) => {
-      if (event.origin !== WORLD_BRIDGE_ORIGIN) return;
-      const message = event.data;
-      if (
-        message?.type !== 'orb-human-badge-proof' ||
-        message.nonce !== input.nonce ||
-        message.requestId !== input.requestId ||
-        !message.idkitResponse
-      ) {
-        return;
-      }
-      cleanup();
-      resolve(message.idkitResponse);
-    };
-
-    window.addEventListener('message', handleMessage);
-    timeoutId = window.setTimeout(
-      () => fail('World verification timed out. Try again.'),
-      10 * 60 * 1000
+async function waitForBridgeProof(input: PendingBridge): Promise<IdKitResponse> {
+  while (Date.now() < input.expiresAt) {
+    const response = await fetch(
+      `${WORLD_BRIDGE_ORIGIN}/api/polling-sessions/${encodeURIComponent(input.sessionId)}/result`,
+      { cache: 'no-store' }
     );
-  });
+    if (response.ok) {
+      const result = (await response.json()) as BridgeResult;
+      if (result.requestId !== input.requestId || !result.idkitResponse) {
+        throw new Error('The bridge returned an invalid World proof.');
+      }
+      return result.idkitResponse;
+    }
+    if (response.status !== 202) {
+      throw new Error('The verification bridge session expired. Try again.');
+    }
+    await new Promise((resolve) => window.setTimeout(resolve, 1500));
+  }
+  throw new Error('World verification timed out. Try again.');
 }
 
 function App() {
@@ -107,21 +89,29 @@ function App() {
       if (!result.ok) throw new Error(result.error);
       if (!('session' in result)) throw new Error('World verification session was not returned.');
       const { session } = result;
-      const nonce = crypto.randomUUID();
-      const proofPromise = waitForBridgeProof({
-        nonce,
-        requestId: session.requestId,
+      const bridgeResponse = await fetch(`${WORLD_BRIDGE_ORIGIN}/api/polling-sessions`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(session),
       });
-      const payload = encodeURIComponent(
-        JSON.stringify({ nonce, openerOrigin: window.location.origin, session })
-      );
-      setPendingBridge({
-        url: `${WORLD_BRIDGE_URL}#payload=${payload}`,
-        nonce,
+      if (!bridgeResponse.ok) throw new Error('The verification bridge could not start.');
+      const bridge = (await bridgeResponse.json()) as {
+        sessionId?: string;
+        launchUrl?: string;
+        expiresAt?: number;
+      };
+      if (!bridge.sessionId || !bridge.launchUrl || !bridge.expiresAt) {
+        throw new Error('The verification bridge returned an invalid session.');
+      }
+      const pending = {
+        url: bridge.launchUrl,
+        sessionId: bridge.sessionId,
         requestId: session.requestId,
-      });
+        expiresAt: bridge.expiresAt,
+      };
+      setPendingBridge(pending);
       setLoading(false);
-      const idkitResponse = await proofPromise;
+      const idkitResponse = await waitForBridgeProof(pending);
       setPendingBridge(undefined);
       setLoading(true);
       const completionResponse = await fetch('/api/human-badge/complete', {
@@ -213,13 +203,14 @@ function App() {
         {pendingBridge && (
           <>
             <p className="notice">
-              Signed request ready. Open the QR page, then keep this Reddit page open.
+              Open the World page and keep this Reddit page open. Your badge will update
+              automatically.
             </p>
             <a
               className="primary orb bridge-link"
               href={pendingBridge.url}
               target="_blank"
-              rel="opener"
+              rel="noopener noreferrer"
               referrerPolicy="no-referrer"
             >
               Open World QR page

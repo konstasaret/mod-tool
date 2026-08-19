@@ -85,12 +85,12 @@ async function createBridgeLaunch(input: {
   return { launchUrl: result.launchUrl, expiresAt: result.expiresAt };
 }
 
-async function createDirectVerificationSession(input: {
+function createDirectVerificationSession(input: {
   request: VerificationRequest;
   config: WorldConfig;
   action: string;
   verificationLevel: VerificationLevel;
-}): Promise<DirectVerificationSession> {
+}): DirectVerificationSession {
   const signal = deriveOpaqueSignal({
     secret: input.config.signalSecret,
     subredditId: context.subredditId,
@@ -102,7 +102,6 @@ async function createDirectVerificationSession(input: {
     rpId: input.config.rpId,
     action: input.action,
   });
-  const callbackUrl = await externalEndpoints.getCallbackUrl('worldVerificationCompleted');
   return {
     requestId: input.request.id,
     appId: input.config.appId,
@@ -111,7 +110,6 @@ async function createDirectVerificationSession(input: {
     signal,
     rpContext,
     environment: input.config.environment,
-    callbackUrl,
     verificationLevel: input.verificationLevel,
     expiresAt: rpContext.expires_at * 1000,
   };
@@ -232,7 +230,7 @@ api.post('/human-badge/start', async (c) => {
       username: user.username,
     });
     const config = await getWorldConfig();
-    const session = await createDirectVerificationSession({
+    const session = createDirectVerificationSession({
       request,
       config,
       action: config.humanBadgeAction,
