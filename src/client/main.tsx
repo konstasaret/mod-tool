@@ -7,8 +7,6 @@ import type {
 } from '../shared/contracts.js';
 import './styles.css';
 
-const WORLD_BRIDGE_ORIGIN = 'https://mod-tool.onrender.com';
-
 type PendingBridge = {
   url: string;
   sessionId: string;
@@ -36,15 +34,14 @@ type BridgeResult = {
 
 async function waitForBridgeProof(input: PendingBridge): Promise<IdKitResponse> {
   while (Date.now() < input.expiresAt) {
-    let response: Response;
-    try {
-      response = await fetch(
-        `${WORLD_BRIDGE_ORIGIN}/api/polling-sessions/${encodeURIComponent(input.sessionId)}/result`,
-        { cache: 'no-store' }
-      );
-    } catch {
-      throw new Error('Reddit could not poll the verification bridge.');
-    }
+    const response = await fetch('/api/human-badge/poll', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        bridgeSessionId: input.sessionId,
+        requestId: input.requestId,
+      }),
+    });
     if (response.ok) {
       const result = (await response.json()) as BridgeResult;
       if (result.requestId !== input.requestId || !result.idkitResponse) {
@@ -92,32 +89,20 @@ function App() {
       const response = await fetch('/api/human-badge/start', { method: 'POST' });
       const result = (await response.json()) as StartVerificationResponse;
       if (!result.ok) throw new Error(result.error);
-      if (!('session' in result)) throw new Error('World verification session was not returned.');
-      const { session } = result;
-      let bridgeResponse: Response;
-      try {
-        bridgeResponse = await fetch(`${WORLD_BRIDGE_ORIGIN}/api/polling-sessions`, {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify(session),
-        });
-      } catch {
-        throw new Error('Reddit could not reach the verification bridge.');
-      }
-      if (!bridgeResponse.ok) throw new Error('The verification bridge could not start.');
-      const bridge = (await bridgeResponse.json()) as {
-        sessionId?: string;
-        launchUrl?: string;
-        expiresAt?: number;
-      };
-      if (!bridge.sessionId || !bridge.launchUrl || !bridge.expiresAt) {
+      if (
+        !('bridgeSessionId' in result) ||
+        !result.bridgeSessionId ||
+        !result.requestId ||
+        !result.launchUrl ||
+        !result.expiresAt
+      ) {
         throw new Error('The verification bridge returned an invalid session.');
       }
       const pending = {
-        url: bridge.launchUrl,
-        sessionId: bridge.sessionId,
-        requestId: session.requestId,
-        expiresAt: bridge.expiresAt,
+        url: result.launchUrl,
+        sessionId: result.bridgeSessionId,
+        requestId: result.requestId,
+        expiresAt: result.expiresAt,
       };
       setPendingBridge(pending);
       setLoading(false);
@@ -128,7 +113,7 @@ function App() {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
-          requestId: session.requestId,
+          requestId: result.requestId,
           idkitResponse,
         }),
       });

@@ -25,7 +25,13 @@ export type PortalState = {
 };
 
 export type StartVerificationResponse =
-  | { ok: true; launchUrl: string; expiresAt: number }
+  | {
+      ok: true;
+      launchUrl: string;
+      expiresAt: number;
+      bridgeSessionId?: string;
+      requestId?: string;
+    }
   | { ok: true; session: DirectVerificationSession }
   | { ok: false; error: string };
 
