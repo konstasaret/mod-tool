@@ -45,7 +45,7 @@ export type BridgePublicSession = Omit<BridgeSessionInput, 'callbackUrl' | 'requ
   expiresAt: number;
 };
 
-export type DirectVerificationSession = Omit<BridgeSessionInput, 'callbackUrl'> & {
+export type DirectVerificationSession = BridgeSessionInput & {
   expiresAt: number;
 };
 

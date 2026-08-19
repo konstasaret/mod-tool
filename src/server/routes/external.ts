@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { context } from '@devvit/web/server';
 import type { IdKitResponse } from '../../shared/contracts.js';
-import { getAppConfig } from '../core/config.js';
+import { getAppConfig, getWorldConfig } from '../core/config.js';
 import { deriveOpaqueSignal } from '../core/privacy.js';
 import { assignHumanBadgeFlair, assignVerifiedFlair, restoreHeldContent } from '../core/reddit.js';
 import {
@@ -35,7 +35,7 @@ external.post('/world/verification-completed', async (c) => {
     if (!request || request.status !== 'pending') throw new Error('Verification request is not pending');
     if (context.userId !== request.redditUserId) throw new Error('Restored Reddit user does not match');
 
-    const config = await getAppConfig();
+    const config = requestKind === 'orb' ? await getWorldConfig() : await getAppConfig();
     const action = requestKind === 'orb' ? config.humanBadgeAction : config.action;
     const signal = deriveOpaqueSignal({
       secret: config.signalSecret,
@@ -50,7 +50,9 @@ external.post('/world/verification-completed', async (c) => {
       expectedEnvironment: config.environment,
       expectedIdentifier: requestKind === 'orb' ? 'orb' : undefined,
     });
-    await verifyProofWithWorld({ rpId: config.rpId, proof: body.idkitResponse });
+    if (requestKind !== 'orb') {
+      await verifyProofWithWorld({ rpId: config.rpId, proof: body.idkitResponse });
+    }
     const claimed =
       requestKind === 'orb'
         ? await claimHumanBadgeNullifier(action, nullifier, request.id, request.redditUserId)
