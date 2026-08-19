@@ -42,7 +42,7 @@ function App() {
         allow_legacy_proofs: true,
         environment: session.environment,
       } as const;
-      const request = await IDKit.requestWithInviteCode(requestConfig).preset(
+      const request = await IDKit.request(requestConfig).preset(
         selfieCheckLegacy({ signal: session.signal })
       );
 
