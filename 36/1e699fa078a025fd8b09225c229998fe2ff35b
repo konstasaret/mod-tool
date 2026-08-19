@@ -1,0 +1,54 @@
+devvit.json
+  s_67e70ea6c3a04f::t_7b830b0f789b50 124
+  s_67e70ea6c3a04f::t_99d31f66a23227 16,21,41,43,77,80,82-94,101-102,106-119,123,125
+  s_67e70ea6c3a04f::t_2df1e21c5da035 126
+src/server/core/config.ts
+  s_67e70ea6c3a04f::t_99d31f66a23227 4,20,23,26
+README.md
+  s_67e70ea6c3a04f::t_d220244d5700e6 1-33,35,39,41-46,48,50,52-57,59,61-63,71,73,75-76,78,80
+src/shared/contracts.ts
+  s_67e70ea6c3a04f::t_99d31f66a23227 2,29-30,42
+src/server/core/state.ts
+  s_67e70ea6c3a04f::t_38cd82e0a3af5c 19-23,66-72,80-81
+  s_67e70ea6c3a04f::t_d07bcca75f97c7 75-77
+src/server/routes/triggers.ts
+  s_67e70ea6c3a04f::t_38cd82e0a3af5c 17,37,41,49,83,85-88,91-95,99,101,103-104,108
+src/bridge/server.ts
+  s_67e70ea6c3a04f::t_4c53972dcaa546 37-38
+  s_67e70ea6c3a04f::t_11b6db35b9ac43 62,170
+src/server/routes/api.ts
+  s_67e70ea6c3a04f::t_278d6fd8fe5831 2,9,11,13,15,17,19,22,26-28,30,32,38-45,48-50,56,67,79,93,101,116,120-127,129-140,142-151,153,156,158-159,162,164,170-184,186-190,195-196,198,200,203,207,210,212,214,219,223,227-228,231,233,238,243
+  s_67e70ea6c3a04f::t_d07bcca75f97c7 14,191-194,197
+src/client/styles.css
+  s_67e70ea6c3a04f::t_ae905547de25ba 54-76,92
+REDDIT_README.md
+  s_67e70ea6c3a04f::t_d220244d5700e6 1,3,5,7,12-14,16
+src/server/core/reddit.ts
+  s_67e70ea6c3a04f::t_38cd82e0a3af5c 41,44,64
+src/client/main.tsx
+  s_67e70ea6c3a04f::t_7c5c96ac683825 3,7,9-10,13-16,18-19,25,32,35,45-99,104,107,109,116,120-121,124,130,136-137,139,142,146-150,152,156,160-162,166-169,171-172,177,179,186-187
+src/bridge/client/main.tsx
+  s_67e70ea6c3a04f::t_11b6db35b9ac43 3,34,45-47,63,79-80
+package.json
+  s_67e70ea6c3a04f::t_41f93144746a93 5
+src/server/core/requests.ts
+  s_67e70ea6c3a04f::t_577e4de5c10664 3
+src/server/routes/menu.ts
+  s_67e70ea6c3a04f::t_fd37d4015a250e 13,37-38,64,69-73
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "361e699fa078a025fd8b09225c229998fe2ff35b",
+  "prompts": {},
+  "sessions": {
+    "s_67e70ea6c3a04f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0165e-29b1-73f3-b453-f87c60d055d7",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "mustafakuloglu <mustafakuloglunun@gmail.com>"
+    }
+  }
+}
