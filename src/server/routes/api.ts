@@ -62,7 +62,7 @@ api.get('/init', async (c) => {
       enabled,
       setupComplete,
       status: 'none',
-      message: 'Sign in to Reddit to use this community verification portal.',
+      message: 'Sign in to Reddit to verify and unlock your post.',
     });
   }
   const [verified, pending] = await Promise.all([
@@ -77,7 +77,7 @@ api.get('/init', async (c) => {
       status: 'verified',
       level: verified.level,
       verifiedAt: verified.verifiedAt,
-      message: 'Your Selfie Check is complete for this community.',
+      message: 'Your Human badge is active in this community.',
     });
   }
   if (pending) {
@@ -90,8 +90,8 @@ api.get('/init', async (c) => {
       requestedAt: pending.requestedAt,
       message:
         pending.status === 'failed'
-          ? 'The last verification did not complete. Ask a moderator to issue a new request.'
-          : 'Complete Selfie Check to publish your held post in this community.',
+          ? 'That check wasn’t completed. Ask a moderator for a new verification link.'
+          : 'Verify now and we’ll publish your post automatically.',
     });
   }
   return c.json<PortalState>({
@@ -99,7 +99,7 @@ api.get('/init', async (c) => {
     enabled,
     setupComplete,
     status: 'none',
-    message: 'No Selfie Check is currently requested for your account.',
+    message: 'Post in this community when you’re ready. We’ll ask you to verify if needed.',
   });
 });
 

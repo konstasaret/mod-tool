@@ -121,7 +121,9 @@ function App() {
       const result = (await response.json()) as StartVerificationResponse;
       if (!result.ok) throw new Error(result.error);
       if (result.transport === 'server') {
-        setPendingBridge({ ...result, pollDirectly: false });
+        const pending = { ...result, pollDirectly: false };
+        setPendingBridge(pending);
+        navigateTo(pending.launchUrl);
         return;
       }
 
@@ -143,13 +145,15 @@ function App() {
       if (launchUrl.origin !== WORLD_BRIDGE_ORIGIN) {
         throw new Error('Browser bridge returned an unexpected launch origin.');
       }
-      setPendingBridge({
+      const pending = {
         bridgeSessionId: bridge.sessionId,
         requestId: result.session.requestId,
         launchUrl: launchUrl.toString(),
         expiresAt: bridge.expiresAt,
         pollDirectly: true,
-      });
+      };
+      setPendingBridge(pending);
+      navigateTo(pending.launchUrl);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Verification could not start.');
     } finally {
@@ -183,10 +187,11 @@ function App() {
     <main className="page">
       <section className="card" aria-live="polite">
         <div className="mark" aria-hidden="true">🌐</div>
-        <p className="eyebrow">COMMUNITY SELFIE CHECK</p>
-        <h1>Prove you’re human to post</h1>
+        <p className="eyebrow">WORLD ID · UNIQUE HUMAN</p>
+        <h1>Unlock your post</h1>
         <p className="lede">
-          Your post is held until World Selfie Check confirms you are a unique human.
+          Complete a quick Selfie Check. We’ll publish your post and add your Human badge
+          automatically.
         </p>
 
         <div className={`status status-${state?.status ?? 'loading'}`}>
@@ -194,58 +199,59 @@ function App() {
             {loading && !state
               ? 'Loading…'
               : state?.status === 'verified'
-                ? '✓ Human Checked'
+                ? '✓ You’re verified'
                 : state?.status === 'pending'
-                  ? 'Post held — Selfie Check required'
-                  : 'No active request'}
+                  ? 'One quick check to go'
+                  : 'Nothing to verify yet'}
           </strong>
           <span>{state?.message}</span>
         </div>
 
         {!state?.setupComplete && state && (
-          <p className="notice">A moderator must finish the app’s World setup before checks can start.</p>
+          <p className="notice">Selfie Check isn’t available yet. Please let a moderator know.</p>
         )}
         {error && <p className="error">{error}</p>}
 
         {state?.status === 'pending' && !pendingBridge && (
           <button className="primary" disabled={!canVerify} onClick={() => void start()}>
-            {loading ? 'Preparing…' : 'Prepare Selfie Check'}
+            {loading ? 'Opening World…' : 'Verify & publish my post'}
           </button>
         )}
         {pendingBridge && (
           <div className="bridge-step">
-            {pendingBridge.pollDirectly && (
-              <strong>Chrome extension fallback active</strong>
-            )}
-            <p>Open Selfie Check in a new tab, then keep this Reddit page open. It will update automatically.</p>
+            <strong>Selfie Check opened</strong>
+            <p>
+              Finish the check in the new tab and keep this page open. Your post and badge will
+              update automatically.
+            </p>
             <button className="bridge-link" type="button" onClick={openSelfieCheck}>
-              Open Selfie Check
+              Open Selfie Check again
             </button>
             <label className="manual-link">
-              If Reddit does not open it, copy this URL into a new tab:
+              Didn’t open? Copy this link into a new tab:
               <input
                 readOnly
                 value={pendingBridge.launchUrl}
                 onFocus={(event) => event.currentTarget.select()}
               />
             </label>
-            <span className="waiting">Waiting for completion…</span>
+            <span className="waiting">Waiting for your verification…</span>
           </div>
         )}
         <button className="secondary" disabled={loading} onClick={() => void refresh()}>
-          Refresh status
+          Check progress
         </button>
         {state?.status === 'verified' && (
           <button className="link-button" disabled={loading} onClick={() => void unlink()}>
-            Remove my Human Check data
+            Remove my verification from this community
           </button>
         )}
 
         <div className="privacy">
-          <strong>Privacy boundary</strong>
+          <strong>Private by design</strong>
           <p>
-            Your Reddit username is not sent to World. The app sends an opaque, community-scoped
-            signal and stores verification state only for this app installation.
+            World never receives your Reddit username. Your verification is private to this
+            community.
           </p>
         </div>
       </section>

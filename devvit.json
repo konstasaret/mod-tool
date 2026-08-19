@@ -85,15 +85,15 @@
       "requestMessage": {
         "type": "paragraph",
         "label": "Verification request message",
-        "defaultValue": "A moderator has requested a privacy-preserving human check. Open the community verification portal to continue."
+        "defaultValue": "Verify with World to unlock posting and get your Human badge."
       }
     }
   },
   "menu": {
     "items": [
       {
-        "label": "Open World Human Check portal",
-        "description": "Create or open the community verification entry point.",
+        "label": "Open Human badge page",
+        "description": "Open the community page for World verification and Human badges.",
         "location": "subreddit",
         "forUserType": "moderator",
         "endpoint": "/internal/menu/open-portal"

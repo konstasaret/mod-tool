@@ -38,10 +38,10 @@ export async function ensurePortalPost(): Promise<string> {
   if (existing && existingVersion === context.appVersion) return existing;
   const post = await reddit.submitCustomPost({
     subredditName: context.subredditName,
-    title: 'World Human Check',
+    title: 'Unlock your post with World ID',
     entry: 'default',
     textFallback: {
-      text: 'Open this post in the current Reddit app to complete a community human check.',
+      text: 'Open this post in Reddit to verify, publish your post, and get your Human badge.',
     },
   });
   await setPortalPost(post.id, context.appVersion);
@@ -59,14 +59,14 @@ export async function notifyUserOfRequest(
 ): Promise<void> {
   const requestMessage =
     (await settings.get<string>('requestMessage'))?.trim() ||
-    'A moderator has requested a privacy-preserving human check.';
+    'Verify with World to unlock posting and get your Human badge.';
   const gateNotice = heldContentType
-    ? `Your recent ${heldContentType} is temporarily hidden because this community requires a Selfie Check before posting. It will be restored automatically after a successful check.\n\n`
+    ? `Your ${heldContentType} is waiting—not deleted. Complete a quick Selfie Check and we’ll publish it automatically.\n\n`
     : '';
   await reddit.sendPrivateMessage({
     to: username,
-    subject: `Human Check requested in r/${context.subredditName}`,
-    text: `${gateNotice}${requestMessage}\n\n[Open the World Human Check portal](${portalUrl(postId)})`,
+    subject: `Unlock your post in r/${context.subredditName}`,
+    text: `${gateNotice}${requestMessage}\n\n[Verify & publish my post](${portalUrl(postId)})`,
   });
 }
 
