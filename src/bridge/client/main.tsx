@@ -1,6 +1,6 @@
 import { StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { IDKit, selfieCheckLegacy } from '@worldcoin/idkit-core';
+import { IDKit, proofOfHuman } from '@worldcoin/idkit-core';
 import QRCode from 'qrcode';
 import type { BridgePublicSession, IdKitResponse } from '../../shared/contracts.js';
 import './styles.css';
@@ -20,7 +20,7 @@ function App() {
         const response = await fetch(`/api/sessions/${encodeURIComponent(sessionId)}`, {
           signal: abortController.signal,
         });
-        if (!response.ok) throw new Error('This Selfie Check link has expired. Return to Reddit and try again.');
+        if (!response.ok) throw new Error('This verification link has expired. Return to Reddit and try again.');
         const session = (await response.json()) as BridgePublicSession;
         const request = await IDKit.request({
           app_id: session.appId as `app_${string}`,
@@ -28,7 +28,7 @@ function App() {
           rp_context: session.rpContext,
           allow_legacy_proofs: true,
           environment: session.environment,
-        }).preset(selfieCheckLegacy({ signal: session.signal }));
+        }).preset(proofOfHuman({ signal: session.signal }));
         if (!request.connectorURI) {
           throw new Error('World did not return a QR connector. Please try again.');
         }
