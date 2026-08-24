@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "Reddit Devvit World ID POC Unblocker",
+  "version": "0.1.0",
+  "description": "Temporarily relaxes Reddit Devvit CSP headers for the local World Selfie Check POC.",
+  "permissions": ["declarativeNetRequest", "storage"],
+  "host_permissions": [
+    "https://reddit.com/*",
+    "https://*.reddit.com/*",
+    "https://*.devvit.net/*"
+  ],
+  "background": {
+    "service_worker": "service-worker.js"
+  },
+  "action": {
+    "default_title": "Toggle Reddit Devvit World ID POC Unblocker"
+  }
+}
